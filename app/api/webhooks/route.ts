@@ -26,6 +26,10 @@ export async function POST(req: Request) {
   const sig = req.headers.get('stripe-signature') as string;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   let event: Stripe.Event;
+  console.log('Webhook request received');
+  console.log('Signature:', sig ? 'Present' : 'Missing');
+  console.log('Webhook Secret:', webhookSecret ? 'Present' : 'Missing');
+  
 
   try {
     if (!sig || !webhookSecret)
