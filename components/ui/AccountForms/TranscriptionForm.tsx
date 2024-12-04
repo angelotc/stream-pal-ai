@@ -26,6 +26,7 @@ interface SpeechRecognitionInstance {
   stop: () => void;
   onresult: (event: SpeechRecognitionEvent) => void;
   onerror: (event: SpeechRecognitionError) => void;
+  onend: () => void;
 }
 
 export default function TranscriptionForm() {
@@ -33,10 +34,11 @@ export default function TranscriptionForm() {
   const [transcribedText, setTranscribedText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const shouldRestartRef = useRef(false);
 
   const startTranscription = () => {
-    setError(null); // Reset error state
-    // Check if browser supports Speech Recognition
+    setError(null);
+    shouldRestartRef.current = true;
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
@@ -54,7 +56,7 @@ export default function TranscriptionForm() {
         const transcript = Array.from(Object.keys(event.results))
           .map(key => event.results[Number(key)][0].transcript)
           .join('');
-        setTranscribedText(transcript);
+        setTranscribedText(prev => prev + ' ' + transcript);
       };
 
       recognition.onerror = (event: SpeechRecognitionError) => {
@@ -75,6 +77,15 @@ export default function TranscriptionForm() {
         
         setError(errorMessage);
         setIsTranscribing(false);
+        shouldRestartRef.current = false;
+      };
+
+      recognition.onend = () => {
+        console.log('Speech recognition ended.');
+        if (shouldRestartRef.current) {
+          console.log('Restarting speech recognition...');
+          recognition.start();
+        }
       };
 
       recognition.start();
@@ -83,10 +94,12 @@ export default function TranscriptionForm() {
     } catch (error) {
       console.error('Error initializing speech recognition:', error);
       setError('An error occurred while initializing speech recognition.');
+      shouldRestartRef.current = false;
     }
   };
 
   const stopTranscription = () => {
+    shouldRestartRef.current = false;
     if (recognitionRef.current) {
       recognitionRef.current.stop();
       recognitionRef.current = null;
