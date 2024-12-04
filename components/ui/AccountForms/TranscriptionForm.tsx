@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import { createClient } from '@deepgram/sdk';
 
-// Add these type declarations
 interface SpeechRecognitionEvent {
   results: {
     [key: number]: {
@@ -33,77 +33,102 @@ export default function TranscriptionForm() {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcribedText, setTranscribedText] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
-  const shouldRestartRef = useRef(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const startTranscription = () => {
-    setError(null);
-    shouldRestartRef.current = true;
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-      setError('Speech recognition is not supported in your browser. Please try using Chrome or Edge.');
-      return;
-    }
+  useEffect(() => {
+    return () => {
+      // Cleanup on component unmount
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (socketRef.current) {
+        socketRef.current.close();
+      }
+    };
+  }, []);
 
+  const startTranscription = async () => {
     try {
-      const recognition = new SpeechRecognition();
+      setError(null);
       
-      recognition.continuous = true;
-      recognition.interimResults = true;
+      // Get microphone permission and stream
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      // Fetch Deepgram API key
+      const response = await fetch('/api/deepgram');
+      const data = await response.json();
       
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        const transcript = Array.from(Object.keys(event.results))
-          .map(key => event.results[Number(key)][0].transcript)
-          .join('');
-        setTranscribedText(prev => prev + ' ' + transcript);
+      if (!data.key) {
+        throw new Error('Failed to get Deepgram API key');
+      }
+
+      // Create WebSocket connection to Deepgram
+      const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?token=${data.key}`);
+
+      socket.onopen = () => {
+        console.log('WebSocket connection established');
+        
+        // Create MediaRecorder instance
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+            socket.send(event.data);
+          }
+        };
+
+        mediaRecorder.start(250); // Collect data every 250ms
       };
 
-      recognition.onerror = (event: SpeechRecognitionError) => {
-        console.error('Speech recognition error:', event.error);
-        let errorMessage = 'An error occurred with speech recognition.';
+      socket.onmessage = (message) => {
+        const received = JSON.parse(message.data);
+        const transcript = received.channel?.alternatives[0]?.transcript;
         
-        switch (event.error) {
-          case 'network':
-            errorMessage = 'Network error occurred. Please check your internet connection and try again.';
-            break;
-          case 'not-allowed':
-            errorMessage = 'Microphone access was denied. Please allow microphone access and try again.';
-            break;
-          case 'no-speech':
-            errorMessage = 'No speech was detected. Please try again.';
-            break;
-        }
-        
-        setError(errorMessage);
-        setIsTranscribing(false);
-        shouldRestartRef.current = false;
-      };
-
-      recognition.onend = () => {
-        console.log('Speech recognition ended.');
-        if (shouldRestartRef.current) {
-          console.log('Restarting speech recognition...');
-          recognition.start();
+        if (transcript) {
+          setTranscribedText(prev => prev + ' ' + transcript);
         }
       };
 
-      recognition.start();
-      recognitionRef.current = recognition;
+      socket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setError('An error occurred with the transcription service');
+        stopTranscription();
+      };
+
+      socket.onclose = () => {
+        console.log('WebSocket connection closed');
+      };
+
+      socketRef.current = socket;
       setIsTranscribing(true);
+
     } catch (error) {
-      console.error('Error initializing speech recognition:', error);
-      setError('An error occurred while initializing speech recognition.');
-      shouldRestartRef.current = false;
+      console.error('Error starting transcription:', error);
+      setError('Error accessing microphone. Please ensure microphone permissions are granted.');
+      stopTranscription();
     }
   };
 
   const stopTranscription = () => {
-    shouldRestartRef.current = false;
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
     }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
+    if (socketRef.current) {
+      socketRef.current.close();
+      socketRef.current = null;
+    }
+
     setIsTranscribing(false);
   };
 
