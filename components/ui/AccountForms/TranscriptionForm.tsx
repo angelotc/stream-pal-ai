@@ -31,31 +31,59 @@ interface SpeechRecognitionInstance {
 export default function TranscriptionForm() {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcribedText, setTranscribedText] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
   const startTranscription = () => {
-    // Initialize speech recognition
+    setError(null); // Reset error state
+    // Check if browser supports Speech Recognition
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
     
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const transcript = Array.from(Object.keys(event.results))
-        .map(key => event.results[Number(key)][0].transcript)
-        .join('');
-      setTranscribedText(transcript);
-    };
+    if (!SpeechRecognition) {
+      setError('Speech recognition is not supported in your browser. Please try using Chrome or Edge.');
+      return;
+    }
 
-    recognition.onerror = (event: SpeechRecognitionError) => {
-      console.error('Speech recognition error:', event.error);
-      setIsTranscribing(false);
-    };
+    try {
+      const recognition = new SpeechRecognition();
+      
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        const transcript = Array.from(Object.keys(event.results))
+          .map(key => event.results[Number(key)][0].transcript)
+          .join('');
+        setTranscribedText(transcript);
+      };
 
-    recognition.start();
-    recognitionRef.current = recognition;
-    setIsTranscribing(true);
+      recognition.onerror = (event: SpeechRecognitionError) => {
+        console.error('Speech recognition error:', event.error);
+        let errorMessage = 'An error occurred with speech recognition.';
+        
+        switch (event.error) {
+          case 'network':
+            errorMessage = 'Network error occurred. Please check your internet connection and try again.';
+            break;
+          case 'not-allowed':
+            errorMessage = 'Microphone access was denied. Please allow microphone access and try again.';
+            break;
+          case 'no-speech':
+            errorMessage = 'No speech was detected. Please try again.';
+            break;
+        }
+        
+        setError(errorMessage);
+        setIsTranscribing(false);
+      };
+
+      recognition.start();
+      recognitionRef.current = recognition;
+      setIsTranscribing(true);
+    } catch (error) {
+      console.error('Error initializing speech recognition:', error);
+      setError('An error occurred while initializing speech recognition.');
+    }
   };
 
   const stopTranscription = () => {
@@ -81,9 +109,13 @@ export default function TranscriptionForm() {
       footer={
         <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
           <p className="pb-4 sm:pb-0">
-            {isTranscribing 
-              ? 'Listening to your voice...' 
-              : 'Click to start recording and transcribing'}
+            {error ? (
+              <span className="text-red-500">{error}</span>
+            ) : (
+              isTranscribing 
+                ? 'Listening to your voice...' 
+                : 'Click to start recording and transcribing'
+            )}
           </p>
           <Button
             variant="slim"
@@ -100,4 +132,4 @@ export default function TranscriptionForm() {
       </div>
     </Card>
   );
-} 
+}
