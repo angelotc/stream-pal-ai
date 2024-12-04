@@ -1,16 +1,9 @@
 import { createClient, LiveTranscriptionEvents } from '@deepgram/sdk';
 import { NextResponse } from 'next/server';
 
-// Add this type declaration at the top of your file
 declare class WebSocketPair {
   0: WebSocket;
   1: WebSocket;
-  constructor();
-}
-
-interface WebSocketPair {
-  socket: WebSocket;
-  response: Response;
 }
 
 export const runtime = 'edge';
@@ -21,7 +14,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const { socket: server, response } = new WebSocketPair();
+    const { 0: client, 1: server } = new WebSocketPair();
     const deepgramClient = createClient(process.env.DEEPGRAM_API_KEY!);
     let keepAlive: NodeJS.Timeout;
 
@@ -44,7 +37,7 @@ export async function GET(request: Request) {
 
         deepgram.addListener(LiveTranscriptionEvents.Transcript, (data) => {
           console.log('deepgram: transcript received');
-          server.send(JSON.stringify(data));
+          client.send(JSON.stringify(data));
         });
 
         deepgram.addListener(LiveTranscriptionEvents.Close, () => {
@@ -60,7 +53,7 @@ export async function GET(request: Request) {
 
         deepgram.addListener(LiveTranscriptionEvents.Metadata, (data) => {
           console.log('deepgram: metadata received');
-          server.send(JSON.stringify({ metadata: data }));
+          client.send(JSON.stringify({ metadata: data }));
         });
       });
 
@@ -92,7 +85,13 @@ export async function GET(request: Request) {
       clearInterval(keepAlive);
     });
 
-    return response;
+    return new Response(null, {
+      status: 101,
+      headers: {
+        'Upgrade': 'websocket',
+        'Connection': 'Upgrade'
+      }
+    });
   } catch (error) {
     console.error('Error in WebSocket handling:', error);
     return new NextResponse('WebSocket error', { status: 500 });
