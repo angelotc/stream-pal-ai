@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
-import { createClient } from '@deepgram/sdk';
 
 interface SpeechRecognitionEvent {
   results: {
@@ -57,17 +56,9 @@ export default function TranscriptionForm() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      // Fetch Deepgram API key
-      const response = await fetch('/api/deepgram');
-      const data = await response.json();
+      // Create WebSocket connection to our API route
+      const socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/deepgram`);
       
-      if (!data.key) {
-        throw new Error('Failed to get Deepgram API key');
-      }
-
-      // Create WebSocket connection to Deepgram
-      const socket = new WebSocket(`wss://api.deepgram.com/v1/listen?token=${data.key}`);
-
       socket.onopen = () => {
         console.log('WebSocket connection established');
         
@@ -75,32 +66,39 @@ export default function TranscriptionForm() {
         const mediaRecorder = new MediaRecorder(stream);
         mediaRecorderRef.current = mediaRecorder;
 
-        mediaRecorder.ondataavailable = (event) => {
+        mediaRecorder.ondataavailable = async (event) => {
           if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
             socket.send(event.data);
           }
         };
 
-        mediaRecorder.start(250); // Collect data every 250ms
+        mediaRecorder.start(250); // Collect 250ms of data at a time
       };
 
       socket.onmessage = (message) => {
-        const received = JSON.parse(message.data);
-        const transcript = received.channel?.alternatives[0]?.transcript;
-        
-        if (transcript) {
-          setTranscribedText(prev => prev + ' ' + transcript);
+        try {
+          const data = JSON.parse(message.data);
+          // Update to handle Deepgram's transcript format
+          if (data.channel?.alternatives?.[0]?.transcript) {
+            const transcript = data.channel.alternatives[0].transcript;
+            console.log('Transcript:', transcript);
+            setTranscribedText(prev => prev + ' ' + transcript);
+          }
+        } catch (error) {
+          console.error('Error parsing transcript:', error);
         }
       };
 
       socket.onerror = (error) => {
         console.error('WebSocket error:', error);
-        setError('An error occurred with the transcription service');
-        stopTranscription();
+        setError('Error connecting to transcription service');
       };
 
       socket.onclose = () => {
         console.log('WebSocket connection closed');
+        if (mediaRecorderRef.current?.state === 'recording') {
+          mediaRecorderRef.current.stop();
+        }
       };
 
       socketRef.current = socket;
