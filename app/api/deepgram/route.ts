@@ -57,9 +57,6 @@ export async function GET(request: Request) {
           console.error('deepgram: error received', error);
         });
 
-        deepgram.addListener(LiveTranscriptionEvents.Warning, (warning) => {
-          console.warn('deepgram: warning received', warning);
-        });
 
         deepgram.addListener(LiveTranscriptionEvents.Metadata, (data) => {
           console.log('deepgram: metadata received');
@@ -92,11 +89,8 @@ export async function GET(request: Request) {
       console.log('socket: client disconnected');
       deepgram.finish();
       deepgram.removeAllListeners();
-      deepgram = null;
       clearInterval(keepAlive);
     });
-
-    server.accept();
 
     return response;
   } catch (error) {
