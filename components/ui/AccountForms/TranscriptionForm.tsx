@@ -5,6 +5,8 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { useDeepgram, LiveConnectionState, LiveTranscriptionEvents, LiveTranscriptionEvent } from '@/context/DeepgramContextProvider';
 import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/MicrophoneContextProvider';
+import { saveTranscript } from '@/utils/transcripts';
+import { TranscriptType } from '@/types/transcripts';
 
 interface Transcript {
   text: string;
@@ -46,7 +48,7 @@ export default function TranscriptionForm() {
       }
     };
 
-    const onTranscript = (data: LiveTranscriptionEvent) => {
+    const onTranscript = async (data: LiveTranscriptionEvent) => {
       const { is_final: isFinal, speech_final: speechFinal } = data;
       let thisCaption = data.channel.alternatives[0].transcript;
 
@@ -56,12 +58,17 @@ export default function TranscriptionForm() {
 
       if (isFinal && speechFinal && thisCaption.trim() !== "") {
         const now = new Date();
-        const timestamp = now.toLocaleTimeString(); // e.g., "3:45:23 PM"
+        const timestamp = now.toLocaleTimeString();
         
         setTranscripts(prev => [...prev, {
           text: thisCaption,
           timestamp
         }]);
+        
+        const { error } = await saveTranscript(thisCaption, TranscriptType.TRANSCRIPT);
+        if (error) {
+          console.error('Failed to save transcript:', error);
+        }
         
         clearTimeout(captionTimeout.current);
         captionTimeout.current = setTimeout(() => {
