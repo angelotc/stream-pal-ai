@@ -54,6 +54,8 @@ export default function TranscriptionForm() {
       }
 
       if (isFinal && speechFinal && thisCaption.trim() !== "") {
+        console.log('isFinal and speechFinal are true');
+        console.log('thisCaption:', thisCaption);
         const now = new Date();
         const timestamp = now.toLocaleTimeString();
         
