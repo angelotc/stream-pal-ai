@@ -6,9 +6,14 @@ import Card from '@/components/ui/Card';
 import { useDeepgram, LiveConnectionState, LiveTranscriptionEvents, LiveTranscriptionEvent } from '@/context/DeepgramContextProvider';
 import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/MicrophoneContextProvider';
 
+interface Transcript {
+  text: string;
+  timestamp: string;
+}
+
 export default function TranscriptionForm() {
   const [caption, setCaption] = useState<string | undefined>("Powered by Deepgram");
-  const [transcripts, setTranscripts] = useState<string[]>([]);
+  const [transcripts, setTranscripts] = useState<Transcript[]>([]);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
   const captionTimeout = useRef<NodeJS.Timeout>();
@@ -50,7 +55,13 @@ export default function TranscriptionForm() {
       }
 
       if (isFinal && speechFinal && thisCaption.trim() !== "") {
-        setTranscripts(prev => [...prev, thisCaption]);
+        const now = new Date();
+        const timestamp = now.toLocaleTimeString(); // e.g., "3:45:23 PM"
+        
+        setTranscripts(prev => [...prev, {
+          text: thisCaption,
+          timestamp
+        }]);
         
         clearTimeout(captionTimeout.current);
         captionTimeout.current = setTimeout(() => {
@@ -138,9 +149,12 @@ export default function TranscriptionForm() {
         {transcripts.length > 0 && (
           <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto">
             {transcripts.map((transcript, index) => (
-              <p key={index} className="py-1 border-b last:border-0">
-                {transcript}
-              </p>
+              <div key={index} className="py-2 border-b last:border-0">
+                <div className="text-sm text-gray-500 mb-1">
+                  {transcript.timestamp}
+                </div>
+                <p>{transcript.text}</p>
+              </div>
             ))}
           </div>
         )}
