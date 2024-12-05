@@ -6,16 +6,13 @@ import Card from '@/components/ui/Card';
 import { useDeepgram, LiveConnectionState, LiveTranscriptionEvents, LiveTranscriptionEvent } from '@/context/DeepgramContextProvider';
 import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/MicrophoneContextProvider';
 import { saveTranscript } from '@/utils/transcripts';
-import { TranscriptType } from '@/types/transcripts';
+import { Database } from '@/types_db';
 
-interface Transcript {
-  text: string;
-  timestamp: string;
-}
+type TranscriptRow = Database['public']['Tables']['transcripts']['Row'];
 
 export default function TranscriptionForm() {
   const [caption, setCaption] = useState<string | undefined>("Powered by Deepgram");
-  const [transcripts, setTranscripts] = useState<Transcript[]>([]);
+  const [transcripts, setTranscripts] = useState<Pick<TranscriptRow, 'text' | 'timestamp'>[]>([]);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
   const captionTimeout = useRef<NodeJS.Timeout>();
@@ -65,7 +62,7 @@ export default function TranscriptionForm() {
           timestamp
         }]);
         
-        const { error } = await saveTranscript(thisCaption, TranscriptType.TRANSCRIPT);
+        const { error } = await saveTranscript(thisCaption, 'transcript');
         if (error) {
           console.error('Failed to save transcript:', error);
         }
