@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@deepgram/sdk':
-        specifier: ^3.9.0
+        specifier: ^3.3.0
         version: 3.9.0
       '@radix-ui/react-toast':
         specifier: ^1.1.5
@@ -2241,7 +2241,7 @@ snapshots:
       cross-fetch: 3.1.8
       deepmerge: 4.3.1
       events: 3.3.0
-      ws: 8.17.0
+      ws: 8.17.1
     transitivePeerDependencies:
       - bufferutil
       - encoding
