@@ -55,26 +55,45 @@ const DeepgramContextProvider: FunctionComponent<
    * @returns A Promise that resolves when the connection is established.
    */
   const connectToDeepgram = async (options: LiveSchema, endpoint?: string) => {
-    const key = await getApiKey();
-    const deepgram = createClient(key);
+    try {
+      const key = await getApiKey();
+      const deepgram = createClient(key);
+  
+      const conn = deepgram.listen.live(options, endpoint);
+  
+      conn.addListener(LiveTranscriptionEvents.Error, (error) => {
+        console.error('Deepgram connection error:', error);
+        setConnectionState(LiveConnectionState.CLOSED);
+      });
+  
+      conn.addListener(LiveTranscriptionEvents.Open, () => {
+        setConnectionState(LiveConnectionState.OPEN);
+      });
+  
+      conn.addListener(LiveTranscriptionEvents.Close, () => {
+        setConnectionState(LiveConnectionState.CLOSED);
+      });
+  
 
-    const conn = deepgram.listen.live(options, endpoint);
-
-    conn.addListener(LiveTranscriptionEvents.Open, () => {
-      setConnectionState(LiveConnectionState.OPEN);
-    });
-
-    conn.addListener(LiveTranscriptionEvents.Close, () => {
+  
+      setConnection(conn);
+    } catch (error) {
+      console.error('Failed to connect to Deepgram:', error);
       setConnectionState(LiveConnectionState.CLOSED);
-    });
-
-    setConnection(conn);
+      throw error;
+    }
   };
 
-  const disconnectFromDeepgram = async () => {
+  const disconnectFromDeepgram = () => {
     if (connection) {
-      connection.finish();
-      setConnection(null);
+      try {
+        connection.finish();
+      } catch (error) {
+        console.error('Error disconnecting from Deepgram:', error);
+      } finally {
+        setConnection(null);
+        setConnectionState(LiveConnectionState.CLOSED);
+      }
     }
   };
 
