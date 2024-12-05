@@ -3,138 +3,115 @@
 import { useState, useRef, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
-
-interface SpeechRecognitionEvent {
-  results: {
-    [key: number]: {
-      [key: number]: {
-        transcript: string;
-      };
-    };
-  };
-}
-
-interface SpeechRecognitionError {
-  error: string;
-}
-
-interface SpeechRecognitionInstance {
-  continuous: boolean;
-  interimResults: boolean;
-  start: () => void;
-  stop: () => void;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: SpeechRecognitionError) => void;
-  onend: () => void;
-}
+import { useDeepgram, LiveConnectionState,  LiveTranscriptionEvents, LiveTranscriptionEvent } from '@/context/DeepgramContextProvider';
+import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/MicrophoneContextProvider';
 
 export default function TranscriptionForm() {
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [transcribedText, setTranscribedText] = useState('');
+  const [caption, setCaption] = useState<string | undefined>('Powered by Deepgram');
   const [error, setError] = useState<string | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const socketRef = useRef<WebSocket | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  
+  const { connection, connectToDeepgram, connectionState } = useDeepgram();
+  const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
+  
+  const captionTimeout = useRef<NodeJS.Timeout>();
+  const keepAliveInterval = useRef<NodeJS.Timeout>();
 
+  // Initialize microphone on component mount
   useEffect(() => {
+    setupMicrophone().catch((err) => {
+      setError('Error accessing microphone. Please ensure microphone permissions are granted.');
+      console.error(err);
+    });
+    
     return () => {
-      // Cleanup on component unmount
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-      if (socketRef.current) {
-        socketRef.current.close();
+      clearTimeout(captionTimeout.current);
+      clearInterval(keepAliveInterval.current);
+    };
+  }, [setupMicrophone]);
+
+  // Connect to Deepgram when microphone is ready
+  useEffect(() => {
+    if (microphoneState === MicrophoneState.Ready && isTranscribing) {
+      connectToDeepgram({
+        model: "nova-2",
+        interim_results: true,
+        smart_format: true,
+        filler_words: true,
+        utterance_end_ms: 3000,
+      });
+    }
+  }, [microphoneState, connectToDeepgram, isTranscribing]);
+
+  // Handle audio streaming and transcription
+  useEffect(() => {
+    if (!microphone || !connection) return;
+
+    const onData = (e: BlobEvent) => {
+      // iOS Safari fix: Prevent empty packets
+      if (e.data.size > 0) {
+        connection?.send(e.data);
       }
     };
-  }, []);
 
-  const startTranscription = async () => {
-    try {
-      setError(null);
-      
-      // Get microphone permission and stream
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
+    const onTranscript = (data: LiveTranscriptionEvent) => {
+      const { is_final: isFinal, speech_final: speechFinal } = data;
+      let thisCaption = data.channel.alternatives[0].transcript;
 
-      // Create WebSocket connection to our API route
-      const socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/deepgram`);
-      
-      socket.onopen = () => {
-        console.log('WebSocket connection established');
-        
-        // Create MediaRecorder instance
-        const mediaRecorder = new MediaRecorder(stream);
-        mediaRecorderRef.current = mediaRecorder;
+      if (thisCaption !== "") {
+        setCaption(thisCaption);
+      }
 
-        mediaRecorder.ondataavailable = async (event) => {
-          if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
-            socket.send(event.data);
-          }
-        };
+      if (isFinal && speechFinal) {
+        clearTimeout(captionTimeout.current);
+        captionTimeout.current = setTimeout(() => {
+          setCaption(undefined);
+          clearTimeout(captionTimeout.current);
+        }, 3000);
+      }
+    };
 
-        mediaRecorder.start(250); // Collect 250ms of data at a time
-      };
-
-      socket.onmessage = (message) => {
-        try {
-          const data = JSON.parse(message.data);
-          // Update to handle Deepgram's transcript format
-          if (data.channel?.alternatives?.[0]?.transcript) {
-            const transcript = data.channel.alternatives[0].transcript;
-            console.log('Transcript:', transcript);
-            setTranscribedText(prev => prev + ' ' + transcript);
-          }
-        } catch (error) {
-          console.error('Error parsing transcript:', error);
-        }
-      };
-
-      socket.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setError('Error connecting to transcription service');
-      };
-
-      socket.onclose = () => {
-        console.log('WebSocket connection closed');
-        if (mediaRecorderRef.current?.state === 'recording') {
-          mediaRecorderRef.current.stop();
-        }
-      };
-
-      socketRef.current = socket;
-      setIsTranscribing(true);
-
-    } catch (error) {
-      console.error('Error starting transcription:', error);
-      setError('Error accessing microphone. Please ensure microphone permissions are granted.');
-      stopTranscription();
-    }
-  };
-
-  const stopTranscription = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current = null;
+    if (connectionState === LiveConnectionState.OPEN) {
+      connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
+      microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
+      startMicrophone();
     }
 
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
+    return () => {
+      connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
+      microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
+      clearTimeout(captionTimeout.current);
+    };
+  }, [connectionState, connection, microphone, startMicrophone]);
+
+  // Keep connection alive
+  useEffect(() => {
+    if (!connection) return;
+
+    if (microphoneState !== MicrophoneState.Open && 
+        connectionState === LiveConnectionState.OPEN) {
+      connection.keepAlive();
+
+      keepAliveInterval.current = setInterval(() => {
+        connection.keepAlive();
+      }, 10000);
+    } else {
+      clearInterval(keepAliveInterval.current);
     }
 
-    if (socketRef.current) {
-      socketRef.current.close();
-      socketRef.current = null;
-    }
-
-    setIsTranscribing(false);
-  };
+    return () => {
+      clearInterval(keepAliveInterval.current);
+    };
+  }, [microphoneState, connectionState, connection]);
 
   const handleTranscription = async () => {
+    setError(null);
     if (isTranscribing) {
-      stopTranscription();
+      stopMicrophone();
+      setIsTranscribing(false);
+      setCaption(undefined);
     } else {
-      startTranscription();
+      setIsTranscribing(true);
     }
   };
 
@@ -163,8 +140,12 @@ export default function TranscriptionForm() {
         </div>
       }
     >
-      <div className="mt-8 mb-4 text-xl">
-        {transcribedText || 'Your transcription will appear here...'}
+      <div className="mt-8 mb-4 min-h-[100px] flex items-center justify-center">
+        {caption && (
+          <span className="bg-black/70 p-4 rounded-lg text-xl">
+            {caption}
+          </span>
+        )}
       </div>
     </Card>
   );
