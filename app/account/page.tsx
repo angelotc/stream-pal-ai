@@ -1,6 +1,7 @@
 import CustomerPortalForm from '@/components/ui/AccountForms/CustomerPortalForm';
 import EmailForm from '@/components/ui/AccountForms/EmailForm';
 import NameForm from '@/components/ui/AccountForms/NameForm';
+import BotSettingsForm from '@/components/ui/SettingsForms/BotSettingsForm';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import {
@@ -37,6 +38,7 @@ export default async function Account() {
         <CustomerPortalForm subscription={subscription} />
         <NameForm userName={userDetails?.full_name ?? ''} />
         <EmailForm userEmail={user.email} />
+        <BotSettingsForm botEnabled={userDetails?.bot_enabled ?? false} />
       </div>
     </section>
   );
