@@ -8,9 +8,14 @@ export const saveTranscript = async (
   try {
     const supabase = createClient();
     
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error('User not authenticated');
+
     const { error } = await supabase
       .from('transcripts')
       .insert([{
+        user_id: user.id,
         text,
         type,
         timestamp: new Date().toISOString()
