@@ -7,32 +7,19 @@ import { useDeepgram, LiveConnectionState, LiveTranscriptionEvents, LiveTranscri
 import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/MicrophoneContextProvider';
 
 export default function TranscriptionForm() {
-  const [caption, setCaption] = useState<string | undefined>('Powered by Deepgram');
-  const [error, setError] = useState<string | null>(null);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  
+  const [caption, setCaption] = useState<string | undefined>("Powered by Deepgram");
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
-  
   const captionTimeout = useRef<NodeJS.Timeout>();
   const keepAliveInterval = useRef<NodeJS.Timeout>();
 
-  // Initialize microphone on component mount
   useEffect(() => {
-    setupMicrophone().catch((err) => {
-      setError('Error accessing microphone. Please ensure microphone permissions are granted.');
-      console.error(err);
-    });
-    
-    return () => {
-      clearTimeout(captionTimeout.current);
-      clearInterval(keepAliveInterval.current);
-    };
-  }, [setupMicrophone]);
+    setupMicrophone();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Connect to Deepgram when microphone is ready
   useEffect(() => {
-    if (microphoneState === MicrophoneState.Ready && isTranscribing) {
+    if (microphoneState === MicrophoneState.Ready) {
       connectToDeepgram({
         model: "nova-2",
         interim_results: true,
@@ -41,14 +28,13 @@ export default function TranscriptionForm() {
         utterance_end_ms: 3000,
       });
     }
-  }, [microphoneState, connectToDeepgram, isTranscribing]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [microphoneState]);
 
-  // Handle audio streaming and transcription
   useEffect(() => {
     if (!microphone || !connection) return;
 
     const onData = (e: BlobEvent) => {
-      // iOS Safari fix: Prevent empty packets
       if (e.data.size > 0) {
         connection?.send(e.data);
       }
@@ -82,16 +68,15 @@ export default function TranscriptionForm() {
       microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
       clearTimeout(captionTimeout.current);
     };
-  }, [connectionState, connection, microphone, startMicrophone]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectionState]);
 
   // Keep connection alive
   useEffect(() => {
     if (!connection) return;
 
-    if (microphoneState !== MicrophoneState.Open && 
-        connectionState === LiveConnectionState.OPEN) {
+    if (microphoneState !== MicrophoneState.Open && connectionState === LiveConnectionState.OPEN) {
       connection.keepAlive();
-
       keepAliveInterval.current = setInterval(() => {
         connection.keepAlive();
       }, 10000);
@@ -102,16 +87,14 @@ export default function TranscriptionForm() {
     return () => {
       clearInterval(keepAliveInterval.current);
     };
-  }, [microphoneState, connectionState, connection]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [microphoneState, connectionState]);
 
-  const handleTranscription = async () => {
-    setError(null);
-    if (isTranscribing) {
+  const handleTranscription = () => {
+    if (microphoneState === MicrophoneState.Open) {
       stopMicrophone();
-      setIsTranscribing(false);
-      setCaption(undefined);
     } else {
-      setIsTranscribing(true);
+      startMicrophone();
     }
   };
 
@@ -122,20 +105,18 @@ export default function TranscriptionForm() {
       footer={
         <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
           <p className="pb-4 sm:pb-0">
-            {error ? (
-              <span className="text-red-500">{error}</span>
+            {microphoneState === MicrophoneState.Open ? (
+              <span className="text-red-500">Recording...</span>
             ) : (
-              isTranscribing 
-                ? 'Listening to your voice...' 
-                : 'Click to start recording and transcribing'
+              'Click to start recording'
             )}
           </p>
           <Button
             variant="slim"
             onClick={handleTranscription}
-            className={isTranscribing ? 'bg-red-600 hover:bg-red-700' : ''}
+            className={microphoneState === MicrophoneState.Open ? 'bg-red-600 hover:bg-red-700' : ''}
           >
-            {isTranscribing ? 'Stop Recording' : 'Start Recording'}
+            {microphoneState === MicrophoneState.Open ? 'Stop Recording' : 'Start Recording'}
           </Button>
         </div>
       }
