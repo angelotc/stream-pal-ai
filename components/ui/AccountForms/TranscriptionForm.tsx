@@ -35,7 +35,7 @@ export default function TranscriptionForm() {
     if (!microphone || !connection) return;
 
     const onData = (e: BlobEvent) => {
-      if (e.data.size > 0) {
+      if (e.data.size > 0 && connection.getReadyState() === 1) {
         connection?.send(e.data);
       }
     };
@@ -60,16 +60,18 @@ export default function TranscriptionForm() {
     if (connectionState === LiveConnectionState.OPEN) {
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
-      startMicrophone();
     }
 
     return () => {
-      connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
-      microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
+      if (connection) {
+        connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
+      }
+      if (microphone) {
+        microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
+      }
       clearTimeout(captionTimeout.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connectionState]);
+  }, [connectionState, connection, microphone]);
 
   // Keep connection alive
   useEffect(() => {
@@ -91,9 +93,9 @@ export default function TranscriptionForm() {
   }, [microphoneState, connectionState]);
 
   const handleTranscription = () => {
-    if (microphoneState === MicrophoneState.Open) {
+    if (microphoneState === MicrophoneState.Open || microphoneState === MicrophoneState.Opening) {
       stopMicrophone();
-    } else {
+    } else if (microphoneState === MicrophoneState.Ready || microphoneState === MicrophoneState.Paused) {
       startMicrophone();
     }
   };
