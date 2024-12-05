@@ -3,6 +3,7 @@
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { createClient } from '@/utils/supabase/client';
+import { manageTwitchSubscriptions } from '@/utils/twitch/client';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Database } from '@/types_db';
@@ -26,6 +27,8 @@ export default function BotSettingsForm({ botEnabled }: { botEnabled: boolean })
         .eq('id', user.id);
 
       if (error) throw error;
+        // Manage Twitch subscriptions based on new bot state
+        await manageTwitchSubscriptions(user.id, !enabled);
       
       setEnabled(!enabled);
       router.refresh();
@@ -62,4 +65,4 @@ export default function BotSettingsForm({ botEnabled }: { botEnabled: boolean })
       </div>
     </Card>
   );
-} 
+}
