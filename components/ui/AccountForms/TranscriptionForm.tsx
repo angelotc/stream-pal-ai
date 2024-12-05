@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
-import { useDeepgram, LiveConnectionState,  LiveTranscriptionEvents, LiveTranscriptionEvent } from '@/context/DeepgramContextProvider';
+import { useDeepgram, LiveConnectionState, LiveTranscriptionEvents, LiveTranscriptionEvent } from '@/context/DeepgramContextProvider';
 import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/MicrophoneContextProvider';
 
 export default function TranscriptionForm() {
