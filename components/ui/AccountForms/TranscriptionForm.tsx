@@ -8,6 +8,7 @@ import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/Micr
 
 export default function TranscriptionForm() {
   const [caption, setCaption] = useState<string | undefined>("Powered by Deepgram");
+  const [transcripts, setTranscripts] = useState<string[]>([]);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
   const captionTimeout = useRef<NodeJS.Timeout>();
@@ -48,7 +49,9 @@ export default function TranscriptionForm() {
         setCaption(thisCaption);
       }
 
-      if (isFinal && speechFinal) {
+      if (isFinal && speechFinal && thisCaption.trim() !== "") {
+        setTranscripts(prev => [...prev, thisCaption]);
+        
         clearTimeout(captionTimeout.current);
         captionTimeout.current = setTimeout(() => {
           setCaption(undefined);
@@ -123,11 +126,23 @@ export default function TranscriptionForm() {
         </div>
       }
     >
-      <div className="mt-8 mb-4 min-h-[100px] flex items-center justify-center">
-        {caption && (
-          <span className="bg-black/70 p-4 rounded-lg text-xl">
-            {caption}
-          </span>
+      <div className="flex flex-col space-y-4">
+        <div className="mt-8 mb-4 min-h-[100px] flex items-center justify-center">
+          {caption && (
+            <span className="bg-black/70 p-4 rounded-lg text-xl">
+              {caption}
+            </span>
+          )}
+        </div>
+        
+        {transcripts.length > 0 && (
+          <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto">
+            {transcripts.map((transcript, index) => (
+              <p key={index} className="py-1 border-b last:border-0">
+                {transcript}
+              </p>
+            ))}
+          </div>
         )}
       </div>
     </Card>
