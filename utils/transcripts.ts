@@ -1,9 +1,12 @@
 import { createClient } from '@/utils/supabase/client';
-import { Transcript, TranscriptType } from '@/types/transcripts';
+import { Database } from '@/types_db';
+
+// Define TranscriptType using the database schema
+type TranscriptType = Database['public']['Tables']['transcripts']['Row']['type'];
 
 export const saveTranscript = async (
   text: string, 
-  type: TranscriptType = TranscriptType.TRANSCRIPT
+  type: TranscriptType
 ): Promise<{ error: any | null }> => {
   try {
     const supabase = createClient();
@@ -14,7 +17,7 @@ export const saveTranscript = async (
 
     const { error } = await supabase
       .from('transcripts')
-      .insert([{
+      .insert<Database['public']['Tables']['transcripts']['Insert']>([{
         user_id: user.id,
         text,
         type,
@@ -52,7 +55,7 @@ export const getTranscripts = async (type?: TranscriptType) => {
     
     if (error) throw error;
     
-    return data;
+    return data as Database['public']['Tables']['transcripts']['Row'][];
   } catch (err) {
     console.error('Error fetching transcripts:', err);
     return [];
