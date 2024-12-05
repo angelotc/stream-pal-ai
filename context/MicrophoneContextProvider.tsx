@@ -86,10 +86,13 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({
   const startMicrophone = useCallback(() => {
     setMicrophoneState(MicrophoneState.Opening);
 
-    if (microphone?.state === "paused") {
+    if (!microphone) return;
+
+    // Only start if not already recording
+    if (microphone.state === 'inactive') {
+      microphone.start(250);
+    } else if (microphone.state === 'paused') {
       microphone.resume();
-    } else {
-      microphone?.start(250);
     }
 
     setMicrophoneState(MicrophoneState.Open);
