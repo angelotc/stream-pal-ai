@@ -32,12 +32,11 @@ export default function MessagesForm() {
   useEffect(() => {
     const loadMessages = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('Current user:', user?.id);
       
       const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .eq('user_id', user?.id || '')
+        .eq('broadcaster_id', user?.id || '')
         .order('created_at', { ascending: false })
         .limit(50);
       
@@ -46,7 +45,6 @@ export default function MessagesForm() {
         return;
       }
       
-      console.log('Loaded messages:', data);
       if (data) {
         setMessages(data);
       }
@@ -67,7 +65,7 @@ export default function MessagesForm() {
             event: 'INSERT', 
             schema: 'public', 
             table: 'messages',
-            filter: `user_id=eq.${user?.id}` 
+            filter: `broadcaster_id=eq.${user?.id}` 
           }, 
           (payload) => {
             const newMessage = payload.new as MessageRow;
