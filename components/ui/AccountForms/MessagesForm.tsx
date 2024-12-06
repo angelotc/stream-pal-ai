@@ -16,6 +16,32 @@ interface Transcript {
   timestamp: string;
 }
 
+const MessageTime = ({ timestamp }: { timestamp: string | null }) => (
+  <span className="text-sm text-gray-500 min-w-[45px]">
+    {timestamp ? new Date(timestamp).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }) : ''}
+  </span>
+);
+
+const MessageAuthor = ({ type, username }: { type: string, username: string | null }) => (
+  <span className={`font-medium ${type === 'transcript' ? 'text-blue-500' : 'text-purple-500'}`}>
+    {type === 'transcript' ? 'You 🎤 : ' : `${username} : `}
+  </span>
+);
+
+const Message = ({ message }: { message: MessageRow }) => (
+  <div className="py-2.5 border-b last:border-0 bg-white px-4 rounded-md mb-2 shadow-sm hover:bg-gray-50 transition-colors">
+    <p className="text-black flex items-baseline gap-2">
+      <MessageTime timestamp={message.created_at} />
+      <MessageAuthor type={message.type} username={message.chatter_user_name} />
+      <span className="flex-1">{message.text}</span>
+    </p>
+  </div>
+);
+
 export default function MessagesForm() {
   const [caption, setCaption] = useState<string | undefined>("Powered by Deepgram");
   const [messages, setMessages] = useState<MessageRow[]>([]);
@@ -213,30 +239,7 @@ export default function MessagesForm() {
             {messages
               .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
               .map((item) => (
-                <div key={item.id} className="py-1.5 border-b last:border-0 bg-white px-3 rounded-md mb-1 shadow-sm font-inter">
-                  <p className="text-black">
-                    <span className="text-sm text-gray-500">
-                      {item.created_at ? new Date(item.created_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false  // This will show 24-hour format
-                      }) : new Date().toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false  // This will show 24-hour format
-                      })}
-                    </span>
-                    {' '}
-                    <span className="text-purple-400 font-bold">
-                      {item.type === 'transcript' ? (
-                        <>You (🎤)</>
-                      ) : (
-                        ('chatter_user_name' in item) ? item.chatter_user_name : ''
-                      )}: 
-                    </span>
-                    {item.text}
-                  </p>
-                </div>
+                <Message key={item.id} message={item} />
               ))}
           </div>
         )}
