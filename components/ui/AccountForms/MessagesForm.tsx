@@ -31,11 +31,27 @@ export default function MessagesForm() {
   // Load initial messages
   useEffect(() => {
     const loadMessages = async () => {
-      const allMessages = await getMessages();
-      setMessages(allMessages);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('user_id', user?.id || '')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (error) {
+        console.error('Error loading messages:', error);
+        return;
+      }
+      
+      if (data) {
+        setMessages(data);
+      }
     };
+
     loadMessages();
-  }, []);
+  }, [supabase]);
 
   // Subscribe to new messages
   useEffect(() => {
@@ -204,7 +220,7 @@ export default function MessagesForm() {
             }))]
               .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
               .map((item) => (
-                <div key={item.id} className="py-1.5 border-b last:border-0 bg-white px-3 rounded-md mb-1 shadow-sm">
+                <div key={item.id} className="py-1.5 border-b last:border-0 bg-white px-3 rounded-md mb-1 shadow-sm font-inter">
                   <p className="text-black">
                     <span className="text-sm text-gray-500">
                       {new Date(item.created_at || '').toLocaleTimeString([], {
@@ -213,7 +229,7 @@ export default function MessagesForm() {
                       })}
                     </span>
                     {' '}
-                    <span className="text-purple-400">
+                    <span className="text-purple-400 font-bold">
                       {item.type === 'transcript' ? (
                         <>You (🎤)</>
                       ) : (
