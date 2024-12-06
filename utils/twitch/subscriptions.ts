@@ -9,32 +9,48 @@ interface TwitchSubscription {
 
 export async function subscribeToChatMessages(broadcasterId: string, accessToken: string) {
     console.log('Subscribing to chat messages for broadcaster:', broadcasterId);
-    const response = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
-        method: 'POST',
-        headers: {
-            'Client-ID': process.env.TWITCH_CLIENT_ID!,
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            type: 'channel.chat.message',
-            version: '1',
-            condition: { broadcaster_user_id: broadcasterId },
-            transport: {
-                method: 'webhook',
-                callback: `${process.env.SITE_URL}/api/twitch/webhook`,
-                secret: process.env.TWITCH_WEBHOOK_SECRET
-            }
-        })
-    });
+    
+    const subscriptionData = {
+        type: 'channel.chat.message',
+        version: '1',
+        condition: { broadcaster_user_id: broadcasterId },
+        transport: {
+            method: 'webhook',
+            callback: `${process.env.SITE_URL}/api/twitch/webhook`,
+            secret: process.env.TWITCH_WEBHOOK_SECRET
+        }
+    };
+    
+    console.log('Subscription request data:', JSON.stringify(subscriptionData, null, 2));
+    
+    try {
+        const response = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
+            method: 'POST',
+            headers: {
+                'Client-ID': process.env.TWITCH_CLIENT_ID!,
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(subscriptionData)
+        });
 
-    if (!response.ok) {
-        throw new Error(`Failed to create chat subscription: ${response.statusText}`);
+        const responseData = await response.json();
+        
+        if (!response.ok) {
+            console.error('Subscription error details:', {
+                status: response.status,
+                statusText: response.statusText,
+                response: responseData
+            });
+            throw new Error(`Failed to create chat subscription: ${response.statusText} - ${JSON.stringify(responseData)}`);
+        }
+
+        console.log('Chat subscription created:', responseData);
+        return responseData;
+    } catch (error) {
+        console.error('Subscription request failed:', error);
+        throw error;
     }
-
-    const data = await response.json();
-    console.log('Chat subscription created:', data);
-    return data;
 }
 
 export async function unsubscribeFromChatMessages(broadcasterId: string, accessToken: string) {
