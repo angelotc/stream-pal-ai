@@ -79,6 +79,7 @@ export async function POST(request: Request) {
                                     text: data.event.message.text,
                                     type: 'twitch',
                                     user_id: data.event.broadcaster_user_id,
+                                    chatter_user_name: data.event.chatter_user_name,
                                     timestamp: new Date().toISOString()
                                 });
 
