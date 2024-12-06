@@ -36,7 +36,7 @@ export default function MessagesForm() {
       const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .eq('broadcaster_id', user?.user_metadata?.full_name || '')
+        .eq('broadcaster_twitch_id', user?.user_metadata?.full_name || '')
         .order('created_at', { ascending: false })
         .limit(50);
       
@@ -65,7 +65,7 @@ export default function MessagesForm() {
             event: 'INSERT', 
             schema: 'public', 
             table: 'messages',
-            filter: `broadcaster_id=eq.${user?.user_metadata?.full_name}` 
+            filter: `broadcaster_twitch_id=eq.${user?.user_metadata?.broadcaster_twitch_id}` 
           }, 
           (payload) => {
             const newMessage = payload.new as MessageRow;
@@ -228,7 +228,10 @@ export default function MessagesForm() {
                 <div key={item.id} className="py-1.5 border-b last:border-0 bg-white px-3 rounded-md mb-1 shadow-sm font-inter">
                   <p className="text-black">
                     <span className="text-sm text-gray-500">
-                      {new Date(item.created_at || '').toLocaleTimeString([], {
+                      {item.created_at ? new Date(item.created_at).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : new Date().toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
