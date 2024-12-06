@@ -3,8 +3,11 @@
 export async function manageTwitchSubscriptions(userId: string, botEnabled: boolean, accessToken: string) {
     const TWITCH_API = 'https://api.twitch.tv/helix/eventsub/subscriptions';
     const CALLBACK_URL = `${process.env.SITE_URL}/api/twitch/eventsub`;
-  
-  
+    console.log ("CALLBACK_URL", CALLBACK_URL);
+    console.log ("botEnabled", botEnabled);
+    console.log ("accessToken", accessToken);
+    console.log ("userId", userId);
+    console.log("Twitch API", TWITCH_API);
     const headers = {
       'Client-ID': process.env.TWITCH_CLIENT_ID!,
       'Authorization': `Bearer ${accessToken}`,
