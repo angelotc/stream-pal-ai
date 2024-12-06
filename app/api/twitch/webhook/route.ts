@@ -80,6 +80,7 @@ export async function POST(request: Request) {
                                     type: 'twitch',
                                     user_id: data.event.broadcaster_user_id,
                                     chatter_user_name: data.event.chatter_user_name,
+                                    broadcaster_id: data.event.broadcaster_user_id,
                                     timestamp: new Date().toISOString()
                                 });
 
