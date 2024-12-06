@@ -7,13 +7,16 @@ interface TwitchSubscription {
     status: string;
 }
 
-export async function subscribeToChatMessages(broadcasterId: string, accessToken: string) {
+export async function subscribeToChatMessages(broadcasterId: string, user_id: string, accessToken: string) {
     console.log('Subscribing to chat messages for broadcaster:', broadcasterId);
     
     const subscriptionData = {
         type: 'channel.chat.message',
         version: '1',
-        condition: { broadcaster_user_id: broadcasterId },
+        condition: { 
+            broadcaster_user_id: broadcasterId,
+            user_id: user_id
+        },
         transport: {
             method: 'webhook',
             callback: `${process.env.SITE_URL}/api/twitch/webhook`,

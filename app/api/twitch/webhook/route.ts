@@ -50,6 +50,7 @@ export async function POST(request: Request) {
 
         // Parse the JSON body
         const data = JSON.parse(body);
+        console.log('Parsed data:', data);
 
         // Handle different message types
         switch (messageType) {
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
                                 twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
                                 twitch_client: process.env.TWITCH_CLIENT_ID!
                             });
-                            await subscribeToChatMessages(data.event.broadcaster_user_id, accessToken);
+                            await subscribeToChatMessages(data.event.broadcaster_user_id, process.env.TWITCH_BOT_USER_ID!, accessToken);
                         } catch (error) {
                             console.error('Failed to subscribe to chat:', error);
                         }
