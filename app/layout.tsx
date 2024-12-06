@@ -6,8 +6,8 @@ import { PropsWithChildren, Suspense } from 'react';
 import { getURL } from '@/utils/helpers';
 import 'styles/main.css';
 
-const title = 'Next.js Subscription Starter';
-const description = 'Brought to you by Vercel, Stripe, and Supabase.';
+const title = 'StreamPal AI';
+const description = 'Brought to you by Vercel, Stripe, Supabase, Deepgram, Twitch, and OpenAI.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(getURL()),
