@@ -1,12 +1,12 @@
 import { createClient } from '@/utils/supabase/client';
 import { Database } from '@/types_db';
 
-// Define TranscriptType using the database schema
-type TranscriptType = Database['public']['Tables']['transcripts']['Row']['type'];
+// Define MessageType using the database schema
+type MessageType = Database['public']['Tables']['messages']['Row']['type'];
 
-export const saveTranscript = async (
+export const saveMessage = async (
   text: string, 
-  type: TranscriptType
+  type: MessageType
 ): Promise<{ error: any | null }> => {
   try {
     const supabase = createClient();
@@ -16,24 +16,24 @@ export const saveTranscript = async (
     if (userError || !user) throw new Error('User not authenticated');
 
     const { error } = await supabase
-      .from('transcripts')
-      .insert<Database['public']['Tables']['transcripts']['Insert']>([{
+      .from('messages')
+      .insert({
         user_id: user.id,
         text,
         type,
         timestamp: new Date().toISOString()
-      }]);
+      });
 
     if (error) throw error;
     
     return { error: null };
   } catch (err) {
-    console.error('Error saving transcript:', err);
+    console.error('Error saving message:', err);
     return { error: err };
   }
 };
 
-export const getTranscripts = async (type?: TranscriptType) => {
+export const getMessages = async (type?: MessageType) => {
   try {
     const supabase = createClient();
     
@@ -42,10 +42,10 @@ export const getTranscripts = async (type?: TranscriptType) => {
     if (userError || !user) throw new Error('User not authenticated');
     
     let query = supabase
-      .from('transcripts')
+      .from('messages')
       .select('*')
-      .eq('user_id', user.id)  // Only get current user's transcripts
-      .order('created_at', { ascending: false });
+      .eq('user_id', user.id)  // Only get current user's messages
+      .order('timestamp', { ascending: false });
       
     if (type) {
       query = query.eq('type', type);
@@ -55,15 +55,14 @@ export const getTranscripts = async (type?: TranscriptType) => {
     
     if (error) throw error;
     
-    return data as Database['public']['Tables']['transcripts']['Row'][];
+    return data;
   } catch (err) {
-    console.error('Error fetching transcripts:', err);
+    console.error('Error fetching messages:', err);
     return [];
   }
 };
 
-// Optional: Add a function to delete transcripts
-export const deleteTranscript = async (transcriptId: string) => {
+export const deleteMessage = async (messageId: string) => {
   try {
     const supabase = createClient();
     
@@ -72,16 +71,16 @@ export const deleteTranscript = async (transcriptId: string) => {
     if (userError || !user) throw new Error('User not authenticated');
 
     const { error } = await supabase
-      .from('transcripts')
+      .from('messages')
       .delete()
-      .eq('id', transcriptId)
-      .eq('user_id', user.id); // Ensure users can only delete their own transcripts
+      .eq('id', messageId)
+      .eq('user_id', user.id); // Ensure users can only delete their own messages
 
     if (error) throw error;
     
     return { error: null };
   } catch (err) {
-    console.error('Error deleting transcript:', err);
+    console.error('Error deleting message:', err);
     return { error: err };
   }
 }; 

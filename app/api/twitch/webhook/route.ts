@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getToken } from '@/utils/twitch/auth';
 import { subscribeToChatMessages, unsubscribeFromChatMessages } from '@/utils/twitch/subscriptions';
+import { createClient } from '@/utils/supabase/server';
 
 // Message type constants
 const MESSAGE_TYPE_VERIFICATION = 'webhook_callback_verification';
@@ -69,6 +70,9 @@ export async function POST(request: Request) {
                 switch (data.subscription.type) {
                     case 'channel.chat.message':
                         console.log('Chat message received:', data.event);
+                        // save to supabase messages table
+                        const supabase = createClient();
+
                         break;
                     case 'stream.online':
                         console.log('Stream started:', data.event);
