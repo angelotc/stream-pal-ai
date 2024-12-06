@@ -1,15 +1,10 @@
-import { getToken } from './auth';
-    
-export async function manageTwitchSubscriptions(userId: string, botEnabled: boolean) {
+
+
+export async function manageTwitchSubscriptions(userId: string, botEnabled: boolean, accessToken: string) {
     const TWITCH_API = 'https://api.twitch.tv/helix/eventsub/subscriptions';
     const CALLBACK_URL = `${process.env.SITE_URL}/api/twitch/eventsub`;
   
-    // Get fresh token
-    const accessToken = await getToken({
-        twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
-        twitch_client: process.env.TWITCH_CLIENT_ID!
-    });
-
+  
     const headers = {
       'Client-ID': process.env.TWITCH_CLIENT_ID!,
       'Authorization': `Bearer ${accessToken}`,
@@ -88,3 +83,4 @@ export async function manageTwitchSubscriptions(userId: string, botEnabled: bool
         throw error;
     }
 } 
+
