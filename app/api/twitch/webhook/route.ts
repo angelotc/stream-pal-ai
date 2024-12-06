@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getToken } from '@/utils/twitch/auth';
+import { subscribeToChatMessages, unsubscribeFromChatMessages } from '@/utils/twitch/subscriptions';
 
 // Message type constants
 const MESSAGE_TYPE_VERIFICATION = 'webhook_callback_verification';
@@ -70,33 +71,12 @@ export async function POST(request: Request) {
                         break;
                     case 'stream.online':
                         console.log('Stream started:', data.event);
-                        // Get fresh token
                         try {
                             const accessToken = await getToken({
                                 twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
                                 twitch_client: process.env.TWITCH_CLIENT_ID!
                             });
-
-                            const chatResponse = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
-                                method: 'POST',
-                                headers: {
-                                    'Client-ID': process.env.TWITCH_CLIENT_ID!,
-                                    'Authorization': `Bearer ${accessToken}`,
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    type: 'channel.chat.message',
-                                    version: '1',
-                                    condition: { broadcaster_user_id: data.event.broadcaster_user_id },
-                                    transport: {
-                                        method: 'webhook',
-                                        callback: `${process.env.SITE_URL}/api/twitch/webhook`,
-                                        secret: process.env.TWITCH_WEBHOOK_SECRET
-                                    }
-                                })
-                            });
-                            const chatData = await chatResponse.json();
-                            console.log('Chat subscription created:', chatData);
+                            await subscribeToChatMessages(data.event.broadcaster_user_id, accessToken);
                         } catch (error) {
                             console.error('Failed to subscribe to chat:', error);
                         }
@@ -105,47 +85,11 @@ export async function POST(request: Request) {
                     case 'stream.offline':
                         console.log('Stream ended:', data.event);
                         try {
-                            // Get fresh token
                             const accessToken = await getToken({
                                 twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
                                 twitch_client: process.env.TWITCH_CLIENT_ID!
                             });
-
-                            // Get existing subscriptions
-                            const subsResponse = await fetch(
-                                `https://api.twitch.tv/helix/eventsub/subscriptions?type=channel.chat.message&status=enabled`,
-                                {
-                                    headers: {
-                                        'Client-ID': process.env.TWITCH_CLIENT_ID!,
-                                        'Authorization': `Bearer ${accessToken}`
-                                    }
-                                }
-                            );
-
-                            const subsData = await subsResponse.json();
-                            console.log('Found chat subscriptions:', subsData);
-
-                            // Delete chat subscriptions for this broadcaster
-                            for (const sub of subsData.data) {
-                                if (sub.condition.broadcaster_user_id === data.event.broadcaster_user_id) {
-                                    const deleteResponse = await fetch(
-                                        `https://api.twitch.tv/helix/eventsub/subscriptions?id=${sub.id}`,
-                                        {
-                                            method: 'DELETE',
-                                            headers: {
-                                                'Client-ID': process.env.TWITCH_CLIENT_ID!,
-                                                'Authorization': `Bearer ${accessToken}`
-                                            }
-                                        }
-                                    );
-
-                                    if (deleteResponse.ok) {
-                                        console.log(`Deleted chat subscription: ${sub.id}`);
-                                    } else {
-                                        console.error(`Failed to delete chat subscription: ${sub.id}`);
-                                    }
-                                }
-                            }
+                            await unsubscribeFromChatMessages(data.event.broadcaster_user_id, accessToken);
                         } catch (error) {
                             console.error('Failed to unsubscribe from chat:', error);
                         } finally {
