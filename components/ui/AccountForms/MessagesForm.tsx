@@ -39,6 +39,7 @@ export default function MessagesForm() {
 
   // Subscribe to new messages
   useEffect(() => {
+    console.log('Setting up Supabase channel subscription...');
     const channel = supabase
       .channel('messages')
       .on('postgres_changes', 
@@ -48,8 +49,12 @@ export default function MessagesForm() {
           table: 'messages' 
         }, 
         (payload) => {
+          console.log('Received new message:', payload);
           const newMessage = payload.new as MessageRow;
-          setMessages(prev => [newMessage, ...prev]);
+          setMessages(prev => {
+            console.log('Updating messages state with new message');
+            return [newMessage, ...prev];
+          });
         }
       )
       .subscribe();
