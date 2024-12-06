@@ -3,7 +3,6 @@
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { createClient } from '@/utils/supabase/client';
-import { manageTwitchSubscriptions } from '@/utils/twitch/client';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Database } from '@/types_db';
@@ -27,8 +26,19 @@ export default function BotSettingsForm({ botEnabled }: { botEnabled: boolean })
         .eq('id', user.id);
 
       if (error) throw error;
-        // Manage Twitch subscriptions based on new bot state
-        await manageTwitchSubscriptions(user.id, !enabled);
+
+      // Call our server endpoint instead of directly managing subscriptions
+      const response = await fetch('/api/twitch/subscriptions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ botEnabled: !enabled })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to manage Twitch subscriptions');
+      }
       
       setEnabled(!enabled);
       router.refresh();
