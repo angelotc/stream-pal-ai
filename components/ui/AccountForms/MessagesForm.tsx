@@ -19,7 +19,6 @@ interface Transcript {
 export default function MessagesForm() {
   const [caption, setCaption] = useState<string | undefined>("Powered by Deepgram");
   const [messages, setMessages] = useState<MessageRow[]>([]);
-  const [transcripts, setTranscripts] = useState<Transcript[]>([]);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
   const captionTimeout = useRef<NodeJS.Timeout>();
@@ -121,13 +120,6 @@ export default function MessagesForm() {
       }
 
       if (isFinal && speechFinal && thisCaption.trim() !== "") {
-        const timestamp = new Date().toISOString();
-        
-        setTranscripts(prev => [...prev, {
-          text: thisCaption,
-          timestamp
-        }]);
-        
         const { error } = await saveMessage(thisCaption, 'transcript');
         if (error) {
           console.error('Failed to save transcript:', error);
@@ -216,17 +208,9 @@ export default function MessagesForm() {
           )}
         </div>
         
-        {(messages.length > 0 || transcripts.length > 0) && (
+        {(messages.length > 0) && (
           <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto bg-gray-50">
-            {[...messages.map(m => ({
-              ...m,
-              content: m.text
-            })), ...transcripts.map(t => ({
-              id: t.timestamp,
-              content: t.text,
-              created_at: t.timestamp,
-              type: 'transcript' as const
-            }))]
+            {messages
               .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
               .map((item) => (
                 <div key={item.id} className="py-1.5 border-b last:border-0 bg-white px-3 rounded-md mb-1 shadow-sm font-inter">
