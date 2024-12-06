@@ -208,27 +208,35 @@ export default function MessagesForm() {
                 return new Date(dateB).getTime() - new Date(dateA).getTime();
               })
               .map((item ) => (
-                <div key={item.id} className="py-2 border-b last:border-0">
-                  <div className="flex justify-between text-sm text-gray-500 mb-1">
-                    <span>
-                      {new Date(item.created_at || '').toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
-                    {item.type === 'transcript' ? (
-                      <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs">
+                <div key={item.id} className="py-2 border-b last:border-0 bg-white">
+                  {item.type === 'transcript' ? (
+                    <>
+                      <span className="text-sm text-gray-500">
+                        {new Date(item.created_at || '').toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                      <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs">
                         Transcript
                       </span>
-                    ) : ('chatter_user_name' in item && item.chatter_user_name) ? (
-                      <span className="text-gray-500">
-                        {item.chatter_user_name}:
+                      <p className="text-black">{item.content || ''}</p>
+                    </>
+                  ) : (
+                    <p className="text-white">
+                      <span className="text-sm text-gray-500">
+                        {new Date(item.created_at || '').toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
                       </span>
-                    ) : null}
-                  </div>
-                  <p className={item.type !== 'transcript' ? 'text-white' : ''}>
-                    {item.content || ''}
-                  </p>
+                      {' '}
+                      <span className="text-purple-400">
+                        {('chatter_user_name' in item) ? item.chatter_user_name : ''}: 
+                      </span>
+                      {item.content || ''}
+                    </p>
+                  )}
                 </div>
               ))}
           </div>
