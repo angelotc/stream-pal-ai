@@ -1,5 +1,3 @@
-
-
 export async function manageTwitchSubscriptions(userId: string, botEnabled: boolean, accessToken: string) {
     const TWITCH_API = 'https://api.twitch.tv/helix/eventsub/subscriptions';
     const CALLBACK_URL = `${process.env.SITE_URL}/api/twitch/webhook`;
@@ -31,6 +29,8 @@ export async function manageTwitchSubscriptions(userId: string, botEnabled: bool
                     }
                 })
             });
+            const onlineData = await onlineResponse.json();
+            console.log("Online subscription response data:", onlineData);
             console.log("onlineResponse", onlineResponse);
             if (!onlineResponse.ok) {
                 throw new Error(`Failed to subscribe to stream.online: ${onlineResponse.statusText}`);
@@ -51,6 +51,8 @@ export async function manageTwitchSubscriptions(userId: string, botEnabled: bool
                     }
                 })
             });
+            const offlineData = await offlineResponse.json();
+            console.log("Offline subscription response data:", offlineData);
             console.log("offlineResponse", offlineResponse);
             if (!offlineResponse.ok) {
                 throw new Error(`Failed to subscribe to stream.offline: ${offlineResponse.statusText}`);

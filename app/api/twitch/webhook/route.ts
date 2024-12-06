@@ -56,6 +56,9 @@ export async function POST(request: Request) {
         });
 
       case MESSAGE_TYPE_NOTIFICATION:
+        console.log('Received notification type:', data.subscription.type);
+        console.log('Full notification data:', data);
+        
         // Handle the event notification
         switch (data.subscription.type) {
           case 'stream.online':
@@ -66,6 +69,8 @@ export async function POST(request: Request) {
             console.log('Stream ended:', data.event);
             // TODO: Add your stream end logic here
             break;
+          default:
+            console.log('Unknown event type:', data.subscription.type);
         }
         // Return 204 for successful receipt
         return new NextResponse(null, { status: 204 });
