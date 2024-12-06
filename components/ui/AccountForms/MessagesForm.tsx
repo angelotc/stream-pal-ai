@@ -36,7 +36,7 @@ export default function MessagesForm() {
       const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .eq('broadcaster_id', user?.id || '')
+        .eq('broadcaster_id', user?.user_metadata?.full_name || '')
         .order('created_at', { ascending: false })
         .limit(50);
       
@@ -65,7 +65,7 @@ export default function MessagesForm() {
             event: 'INSERT', 
             schema: 'public', 
             table: 'messages',
-            filter: `broadcaster_id=eq.${user?.id}` 
+            filter: `broadcaster_id=eq.${user?.user_metadata?.full_name}` 
           }, 
           (payload) => {
             const newMessage = payload.new as MessageRow;
