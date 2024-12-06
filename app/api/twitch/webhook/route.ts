@@ -70,9 +70,28 @@ export async function POST(request: Request) {
                 switch (data.subscription.type) {
                     case 'channel.chat.message':
                         console.log('Chat message received:', data.event);
-                        // save to supabase messages table
                         const supabase = createClient();
+                        
+                        try {
+                            const { error } = await supabase
+                                .from('messages')
+                                .insert({
+                                    text: data.event.message.text,
+                                    type: 'twitch',
+                                    user_id: data.event.broadcaster_user_id,
+                                    timestamp: new Date().toISOString()
+                                });
 
+                            if (error) {
+                                console.error('Error saving twitch message:', error);
+                                return new NextResponse('Error saving message', { status: 500 });
+                            }
+                            
+                            return new NextResponse(null, { status: 204 });
+                        } catch (error) {
+                            console.error('Failed to save twitch message:', error);
+                            return new NextResponse('Internal Server Error', { status: 500 });
+                        }
                         break;
                     case 'stream.online':
                         console.log('Stream started:', data.event);
