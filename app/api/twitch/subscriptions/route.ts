@@ -20,7 +20,9 @@ export async function POST(request: Request) {
         twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
         twitch_client: process.env.TWITCH_CLIENT_ID!
     });
-
+    console.log("accessToken", accessToken);
+    console.log("user.user_metadata.full_name", user.user_metadata.full_name);
+    console.log("process.env.TWITCH_CLIENT_ID!", process.env.TWITCH_CLIENT_ID!);
     const streamerData = await getStreamerData({ 
         client_id: process.env.TWITCH_CLIENT_ID!,
         access_token: accessToken,
