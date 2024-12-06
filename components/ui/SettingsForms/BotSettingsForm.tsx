@@ -70,7 +70,7 @@ export default function BotSettingsForm({ botEnabled }: { botEnabled: boolean })
     >
       <div className="mt-8 mb-4 text-xl font-semibold">
         <p className="text-zinc-400">
-          When enabled, the bot will assist with your transcriptions.
+          When enabled, the bot will join your stream and chat with viewers when you go live.
         </p>
       </div>
     </Card>

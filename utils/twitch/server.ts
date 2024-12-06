@@ -31,7 +31,7 @@ export async function manageTwitchSubscriptions(userId: string, botEnabled: bool
                     }
                 })
             });
-
+            console.log("onlineResponse", onlineResponse);
             if (!onlineResponse.ok) {
                 throw new Error(`Failed to subscribe to stream.online: ${onlineResponse.statusText}`);
             }
@@ -51,7 +51,7 @@ export async function manageTwitchSubscriptions(userId: string, botEnabled: bool
                     }
                 })
             });
-
+            console.log("offlineResponse", offlineResponse);
             if (!offlineResponse.ok) {
                 throw new Error(`Failed to subscribe to stream.offline: ${offlineResponse.statusText}`);
             }
