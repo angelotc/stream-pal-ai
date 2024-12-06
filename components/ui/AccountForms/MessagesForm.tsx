@@ -234,7 +234,7 @@ export default function MessagesForm() {
                         ('chatter_user_name' in item) ? item.chatter_user_name : ''
                       )}: 
                     </span>
-                    {item.content || ''}
+                    {item.text}
                   </p>
                 </div>
               ))}
