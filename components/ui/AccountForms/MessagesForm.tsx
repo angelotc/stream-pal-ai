@@ -39,7 +39,6 @@ export default function MessagesForm() {
 
   // Subscribe to new messages
   useEffect(() => {
-    console.log('Setting up Supabase channel subscription...');
     const channel = supabase
       .channel('messages')
       .on('postgres_changes', 
@@ -49,12 +48,8 @@ export default function MessagesForm() {
           table: 'messages' 
         }, 
         (payload) => {
-          console.log('Received new message:', payload);
           const newMessage = payload.new as MessageRow;
-          setMessages(prev => {
-            console.log('Updating messages state with new message');
-            return [newMessage, ...prev];
-          });
+          setMessages(prev => [newMessage, ...prev]);
         }
       )
       .subscribe();
@@ -62,7 +57,7 @@ export default function MessagesForm() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     setupMicrophone();
@@ -212,10 +207,24 @@ export default function MessagesForm() {
                 const dateB = b.created_at || '';
                 return new Date(dateB).getTime() - new Date(dateA).getTime();
               })
-              .map((item) => (
+              .map((item ) => (
                 <div key={item.id} className="py-2 border-b last:border-0">
-                  <div className="text-sm text-gray-500 mb-1">
-                    {new Date(item.created_at || '').toLocaleTimeString()}
+                  <div className="flex justify-between text-sm text-gray-500 mb-1">
+                    <span>
+                      {new Date(item.created_at || '').toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                    {item.type === 'transcript' ? (
+                      <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs">
+                        Transcript
+                      </span>
+                    ) : ('chatter_user_name' in item && item.chatter_user_name) ? (
+                      <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">
+                        {item.chatter_user_name}
+                      </span>
+                    ) : null}
                   </div>
                   <p>{item.content || ''}</p>
                 </div>
