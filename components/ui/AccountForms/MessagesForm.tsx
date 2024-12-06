@@ -32,6 +32,7 @@ export default function MessagesForm() {
   useEffect(() => {
     const loadMessages = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('Current user:', user?.id);
       
       const { data, error } = await supabase
         .from('messages')
@@ -45,6 +46,7 @@ export default function MessagesForm() {
         return;
       }
       
+      console.log('Loaded messages:', data);
       if (data) {
         setMessages(data);
       }
@@ -55,24 +57,29 @@ export default function MessagesForm() {
 
   // Subscribe to new messages
   useEffect(() => {
-    const channel = supabase
-      .channel('messages')
-      .on('postgres_changes', 
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'messages' 
-        }, 
-        (payload) => {
-          const newMessage = payload.new as MessageRow;
-          setMessages(prev => [newMessage, ...prev]);
-        }
-      )
-      .subscribe();
+    const setupSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const channel = supabase
+        .channel('messages')
+        .on('postgres_changes', 
+          { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'messages',
+            filter: `user_id=eq.${user?.id}` 
+          }, 
+          (payload) => {
+            const newMessage = payload.new as MessageRow;
+            setMessages(prev => [newMessage, ...prev]);
+          }
+        )
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
+      return () => supabase.removeChannel(channel);
     };
+
+    setupSubscription();
   }, [supabase]);
 
   useEffect(() => {
