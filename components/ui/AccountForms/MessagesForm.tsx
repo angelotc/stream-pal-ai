@@ -221,12 +221,14 @@ export default function MessagesForm() {
                         Transcript
                       </span>
                     ) : ('chatter_user_name' in item && item.chatter_user_name) ? (
-                      <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">
-                        {item.chatter_user_name}
+                      <span className="text-gray-500">
+                        {item.chatter_user_name}:
                       </span>
                     ) : null}
                   </div>
-                  <p>{item.content || ''}</p>
+                  <p className={item.type !== 'transcript' ? 'text-white' : ''}>
+                    {item.content || ''}
+                  </p>
                 </div>
               ))}
           </div>
