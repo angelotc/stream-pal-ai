@@ -121,8 +121,7 @@ export default function MessagesForm() {
       }
 
       if (isFinal && speechFinal && thisCaption.trim() !== "") {
-        const now = new Date();
-        const timestamp = now.toLocaleTimeString();
+        const timestamp = new Date().toISOString();
         
         setTranscripts(prev => [...prev, {
           text: thisCaption,
@@ -235,10 +234,12 @@ export default function MessagesForm() {
                     <span className="text-sm text-gray-500">
                       {item.created_at ? new Date(item.created_at).toLocaleTimeString([], {
                         hour: '2-digit',
-                        minute: '2-digit'
+                        minute: '2-digit',
+                        hour12: false  // This will show 24-hour format
                       }) : new Date().toLocaleTimeString([], {
                         hour: '2-digit',
-                        minute: '2-digit'
+                        minute: '2-digit',
+                        hour12: false  // This will show 24-hour format
                       })}
                     </span>
                     {' '}
