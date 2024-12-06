@@ -32,13 +32,16 @@ export default function MessagesForm() {
   useEffect(() => {
     const loadMessages = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('Current user:', user); // Debug log
       
       const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .eq('broadcaster_twitch_id', user?.user_metadata?.full_name || '')
+        .eq('broadcaster_twitch_id', user?.user_metadata?.twitch_user_id)
         .order('created_at', { ascending: false })
         .limit(50);
+      
+      console.log('Messages query result:', { data, error }); // Debug log
       
       if (error) {
         console.error('Error loading messages:', error);
