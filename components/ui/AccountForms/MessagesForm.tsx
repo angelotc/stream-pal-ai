@@ -198,19 +198,26 @@ export default function MessagesForm() {
         
         {(messages.length > 0 || transcripts.length > 0) && (
           <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto">
-            {[...messages, ...transcripts.map(t => ({
+            {[...messages.map(m => ({
+              ...m,
+              content: m.text
+            })), ...transcripts.map(t => ({
               id: t.timestamp,
               content: t.text,
               created_at: t.timestamp,
               type: 'transcript' as const
             }))]
-              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+              .sort((a, b) => {
+                const dateA = a.created_at || '';
+                const dateB = b.created_at || '';
+                return new Date(dateB).getTime() - new Date(dateA).getTime();
+              })
               .map((item) => (
                 <div key={item.id} className="py-2 border-b last:border-0">
                   <div className="text-sm text-gray-500 mb-1">
-                    {new Date(item.created_at).toLocaleTimeString()}
+                    {new Date(item.created_at || '').toLocaleTimeString()}
                   </div>
-                  <p>{item.content}</p>
+                  <p>{item.content || ''}</p>
                 </div>
               ))}
           </div>
