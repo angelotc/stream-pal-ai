@@ -80,7 +80,7 @@ export async function POST(request: Request) {
                                     type: 'twitch',
                                     user_id: data.event.broadcaster_user_id,
                                     chatter_user_name: data.event.chatter_user_name,
-                                    broadcaster_twitch_id: data.event.broadcaster_user_id,
+                                    broadcaster_id: data.event.broadcaster_user_id,
                                     timestamp: new Date().toISOString()
                                 });
 
@@ -98,30 +98,42 @@ export async function POST(request: Request) {
                     case 'stream.online':
                         console.log('Stream started:', data.event);
                         try {
+                            const supabase = createClient();
+                            // Update is_live status in users table
+                            await supabase
+                                .from('users')
+                                .update({ is_live: true })
+                                .eq('twitch_user_id', data.event.broadcaster_user_id);
+
                             const accessToken = await getToken({
                                 twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
                                 twitch_client: process.env.TWITCH_CLIENT_ID!
                             });
                             await subscribeToChatMessages(data.event.broadcaster_user_id, process.env.TWITCH_BOT_USER_ID!, accessToken);
                         } catch (error) {
-                            console.error('Failed to subscribe to chat:', error);
+                            console.error('Failed to handle stream start:', error);
                         }
-                        break;
+                        return new NextResponse(null, { status: 204 });
 
                     case 'stream.offline':
                         console.log('Stream ended:', data.event);
                         try {
+                            const supabase = createClient();
+                            // Update is_live status in users table
+                            await supabase
+                                .from('users')
+                                .update({ is_live: false })
+                                .eq('twitch_user_id', data.event.broadcaster_user_id);
+
                             const accessToken = await getToken({
                                 twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
                                 twitch_client: process.env.TWITCH_CLIENT_ID!
                             });
                             await unsubscribeFromChatMessages(data.event.broadcaster_user_id, accessToken);
                         } catch (error) {
-                            console.error('Failed to unsubscribe from chat:', error);
-                        } finally {
-                            return new NextResponse(null, { status: 204 });
+                            console.error('Failed to handle stream end:', error);
                         }
-                        break;
+                        return new NextResponse(null, { status: 204 });
                     default:
                         console.log('Unknown event type:', data.subscription.type);
                 }
