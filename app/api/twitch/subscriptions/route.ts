@@ -26,6 +26,7 @@ export async function POST(request: Request) {
         access_token: accessToken,
         twitch_username: user.user_metadata.full_name 
     });
+    console.log("streamerData", streamerData);
          
     await manageTwitchSubscriptions(streamerData.id, botEnabled, accessToken);
     
