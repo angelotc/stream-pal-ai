@@ -32,16 +32,17 @@ export default function MessagesForm() {
   useEffect(() => {
     const loadMessages = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('Current user:', user); // Debug log
+      const twitchUserId = user?.user_metadata?.provider_id;
+      console.log('Loading messages for Twitch ID:', twitchUserId);
       
       const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .eq('broadcaster_twitch_id', user?.user_metadata?.twitch_user_id)
+        .eq('broadcaster_twitch_id', twitchUserId)
         .order('created_at', { ascending: false })
         .limit(50);
       
-      console.log('Messages query result:', { data, error }); // Debug log
+      console.log('Messages query result:', { data, error });
       
       if (error) {
         console.error('Error loading messages:', error);
@@ -60,6 +61,7 @@ export default function MessagesForm() {
   useEffect(() => {
     const setupSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      const twitchUserId = user?.user_metadata?.provider_id;
       
       const channel = supabase
         .channel('messages')
@@ -68,7 +70,7 @@ export default function MessagesForm() {
             event: 'INSERT', 
             schema: 'public', 
             table: 'messages',
-            filter: `broadcaster_twitch_id=eq.${user?.user_metadata?.broadcaster_twitch_id}` 
+            filter: `broadcaster_twitch_id=eq.${twitchUserId}` 
           }, 
           (payload) => {
             const newMessage = payload.new as MessageRow;
