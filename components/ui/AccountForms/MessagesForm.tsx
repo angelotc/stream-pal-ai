@@ -192,7 +192,7 @@ export default function MessagesForm() {
         </div>
         
         {(messages.length > 0 || transcripts.length > 0) && (
-          <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto">
+          <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto bg-gray-50">
             {[...messages.map(m => ({
               ...m,
               content: m.text
@@ -202,41 +202,26 @@ export default function MessagesForm() {
               created_at: t.timestamp,
               type: 'transcript' as const
             }))]
-              .sort((a, b) => {
-                const dateA = a.created_at || '';
-                const dateB = b.created_at || '';
-                return new Date(dateB).getTime() - new Date(dateA).getTime();
-              })
-              .map((item ) => (
-                <div key={item.id} className="py-2 border-b last:border-0 bg-white">
-                  {item.type === 'transcript' ? (
-                    <>
-                      <span className="text-sm text-gray-500">
-                        {new Date(item.created_at || '').toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                      <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs">
-                        Transcript
-                      </span>
-                      <p className="text-black">{item.content || ''}</p>
-                    </>
-                  ) : (
-                    <p className="text-white">
-                      <span className="text-sm text-gray-500">
-                        {new Date(item.created_at || '').toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                      {' '}
-                      <span className="text-purple-400">
-                        {('chatter_user_name' in item) ? item.chatter_user_name : ''}: 
-                      </span>
-                      {item.content || ''}
-                    </p>
-                  )}
+              .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
+              .map((item) => (
+                <div key={item.id} className="py-1.5 border-b last:border-0 bg-white px-3 rounded-md mb-1 shadow-sm">
+                  <p className="text-black">
+                    <span className="text-sm text-gray-500">
+                      {new Date(item.created_at || '').toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                    {' '}
+                    <span className="text-purple-400">
+                      {item.type === 'transcript' ? (
+                        <>You (🎤)</>
+                      ) : (
+                        ('chatter_user_name' in item) ? item.chatter_user_name : ''
+                      )}: 
+                    </span>
+                    {item.content || ''}
+                  </p>
                 </div>
               ))}
           </div>
