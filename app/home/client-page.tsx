@@ -1,7 +1,7 @@
 // app/home/client-page.tsx
 'use client';
 
-import TranscriptionForm from '@/components/ui/AccountForms/TranscriptionForm';
+import MessagesForm from '@/components/ui/AccountForms/MessagesForm';
 import { DeepgramContextProvider } from '@/context/DeepgramContextProvider';
 import { MicrophoneContextProvider } from '@/context/MicrophoneContextProvider';
 
@@ -21,7 +21,7 @@ export default function ClientHome() {
             </div>
           </div>
           <div className="p-4">
-            <TranscriptionForm />
+            <MessagesForm />
           </div>
         </section>
       </MicrophoneContextProvider>

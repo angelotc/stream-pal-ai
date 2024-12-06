@@ -5,18 +5,59 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { useDeepgram, LiveConnectionState, LiveTranscriptionEvents, LiveTranscriptionEvent } from '@/context/DeepgramContextProvider';
 import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/MicrophoneContextProvider';
-import { saveMessage } from '@/utils/messages';
+import { saveMessage, getMessages } from '@/utils/messages';
 import { Database } from '@/types_db';
+import { createClient } from '@/utils/supabase/client';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
-export default function TranscriptionForm() {
+interface Transcript {
+  text: string;
+  timestamp: string;
+}
+
+export default function MessagesForm() {
   const [caption, setCaption] = useState<string | undefined>("Powered by Deepgram");
-  const [transcripts, setTranscripts] = useState<Pick<MessageRow, 'text' | 'timestamp'>[]>([]);
+  const [messages, setMessages] = useState<MessageRow[]>([]);
+  const [transcripts, setTranscripts] = useState<Transcript[]>([]);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
   const captionTimeout = useRef<NodeJS.Timeout>();
   const keepAliveInterval = useRef<NodeJS.Timeout>();
+
+  // Initialize Supabase client
+  const supabase = createClient();
+
+  // Load initial messages
+  useEffect(() => {
+    const loadMessages = async () => {
+      const allMessages = await getMessages();
+      setMessages(allMessages);
+    };
+    loadMessages();
+  }, []);
+
+  // Subscribe to new messages
+  useEffect(() => {
+    const channel = supabase
+      .channel('messages')
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'messages' 
+        }, 
+        (payload) => {
+          const newMessage = payload.new as MessageRow;
+          setMessages(prev => [newMessage, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   useEffect(() => {
     setupMicrophone();
