@@ -15,13 +15,17 @@ export const saveMessage = async (
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error('User not authenticated');
 
+    const timestamp = new Date().toISOString();
+
     const { error } = await supabase
       .from('messages')
       .insert({
         user_id: user.id,
         text,
         type,
-        timestamp: new Date().toISOString()
+        timestamp,
+        created_at: timestamp,
+        broadcaster_twitch_id: user.user_metadata?.provider_id
       });
 
     if (error) throw error;
