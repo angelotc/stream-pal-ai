@@ -2,7 +2,7 @@
 
 export async function manageTwitchSubscriptions(userId: string, botEnabled: boolean, accessToken: string) {
     const TWITCH_API = 'https://api.twitch.tv/helix/eventsub/subscriptions';
-    const CALLBACK_URL = `${process.env.SITE_URL}/api/twitch/eventsub`;
+    const CALLBACK_URL = `${process.env.SITE_URL}/api/twitch/webhook`;
     console.log ("CALLBACK_URL", CALLBACK_URL);
     console.log ("botEnabled", botEnabled);
     console.log ("accessToken", accessToken);
@@ -66,6 +66,7 @@ export async function manageTwitchSubscriptions(userId: string, botEnabled: bool
             }
 
             const data = await response.json();
+            console.log("deleting subscriptions", data);
             
             // Delete each subscription
             if (data.data) {
