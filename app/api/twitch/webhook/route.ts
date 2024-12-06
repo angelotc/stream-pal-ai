@@ -7,6 +7,9 @@ const MESSAGE_TYPE_NOTIFICATION = 'notification';
 const MESSAGE_TYPE_REVOCATION = 'revocation';
 
 export async function POST(request: Request) {
+  console.log("Webhook endpoint hit!");
+  console.log("Request headers:", Object.fromEntries(request.headers.entries()));
+  
   try {
     // Get all required headers
     const messageId = request.headers.get('Twitch-Eventsub-Message-Id');
