@@ -102,7 +102,7 @@ export async function POST(request: Request) {
                             const platform = 'twitch'; // Specify the platform, e.g., 'twitch'
 
                             // Use broadcaster_user_id as platform_user_id
-                            const platformUserId: string = data.event.broadcaster_user_id;
+                            const platformUserId: string = data.event.broadcaster_user_id; // e.g. twitch user id
 
                             // Find the user by platformUserId
                             const { data: userData, error: userError } = await supabase
@@ -152,20 +152,26 @@ export async function POST(request: Request) {
                             const supabase = createClient();
                             const platform = 'twitch'; // Specify the platform, e.g., 'twitch'
 
-                            // Ensure the user_id is a valid UUID
-                            const userId = data.event.broadcaster_user_id; // Ensure this is a UUID
+                            // Use broadcaster_user_id as platform_user_id
+                            const platformUserId: string = data.event.broadcaster_user_id;
 
-                            // If userId is not a UUID, you need to handle this case
-                            if (!isValidUUID(userId)) {
-                                console.error('Invalid UUID for user_id:', userId);
-                                return new NextResponse('Invalid user ID', { status: 400 });
+                            // Find the user by platformUserId
+                            const { data: userData, error: userError } = await supabase
+                                .from('users')
+                                .select('*')
+                                .eq('platform_user_id', platformUserId)
+                                .single();
+
+                            if (userError || !userData) {
+                                console.error('Error finding user:', userError);
+                                return new NextResponse('User not found', { status: 404 });
                             }
 
                             // Upsert is_live status in stream_settings table
                             const { data: updateData, error: updateError } = await supabase
                                 .from('stream_settings')
                                 .upsert(
-                                    { user_id: userId, platform: platform, is_live: false },
+                                    { user_id: userData.id, platform: platform, is_live: false },
                                     { onConflict: 'user_id, platform' }
                                 );
 
