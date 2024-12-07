@@ -99,16 +99,24 @@ export async function POST(request: Request) {
                         console.log('Stream started:', data.event);
                         try {
                             const supabase = createClient();
-                            // Update is_live status in users table
-                            await supabase
+                            console.log('Attempting to update is_live status for broadcaster:', data.event.broadcaster_user_id);
+                            
+                            const { data: updateData, error: updateError } = await supabase
                                 .from('users')
                                 .update({ is_live: true })
                                 .eq('twitch_user_id', data.event.broadcaster_user_id);
 
+                            if (updateError) {
+                                console.error('Failed to update is_live status:', updateError);
+                            } else {
+                                console.log('Update result:', updateData);
+                            }
+                            
                             const accessToken = await getToken({
                                 twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
                                 twitch_client: process.env.TWITCH_CLIENT_ID!
                             });
+                            // Subscribe to Twitch chat messages
                             await subscribeToChatMessages(data.event.broadcaster_user_id, process.env.TWITCH_BOT_USER_ID!, accessToken);
                         } catch (error) {
                             console.error('Failed to handle stream start:', error);
@@ -124,7 +132,7 @@ export async function POST(request: Request) {
                                 .from('users')
                                 .update({ is_live: false })
                                 .eq('twitch_user_id', data.event.broadcaster_user_id);
-
+                            // Unsubscribe from Twitch chat messages
                             const accessToken = await getToken({
                                 twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
                                 twitch_client: process.env.TWITCH_CLIENT_ID!
