@@ -133,7 +133,7 @@ export async function POST(request: Request) {
                             await supabase
                                 .from('users')
                                 .update({ is_live: false })
-                                .eq('twitch_user_id', String(data.event.broadcaster_user_id));
+                                .eq('twitch_user_id', data.event.broadcaster_user_id.toString());
                             // Unsubscribe from Twitch chat messages
                             const accessToken = await getToken({
                                 twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
