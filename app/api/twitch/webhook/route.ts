@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getToken } from '@/utils/twitch/auth';
 import { subscribeToChatMessages, unsubscribeFromChatMessages } from '@/utils/twitch/subscriptions';
-import { createClient } from '@/utils/supabase/server';
+import { supabaseAdmin } from '@/utils/supabase/admin';
 
 // Message type constants
 const MESSAGE_TYPE_VERIFICATION = 'webhook_callback_verification';
@@ -98,33 +98,28 @@ export async function POST(request: Request) {
                     case 'stream.online':
                         console.log('Stream started:', data.event);
                         try {
-                            const supabase = createClient();
-                            const platform = 'twitch'; // Specify the platform, e.g., 'twitch'
+                            const platform = 'twitch';
+                            const platformUserId: string = data.event.broadcaster_user_id;
 
-                            // Use broadcaster_user_id as platform_user_id
-                            const platformUserId: string = data.event.broadcaster_user_id; // e.g. twitch user id
-
-                            // Find the user by platformUserId
-                            const { data: userData, error: userError } = await supabase
+                            const { data: userData, error: userError } = await supabaseAdmin
                                 .from('users')
                                 .select('*')
                                 .eq('twitch_user_id', platformUserId)
                                 .single();
-
+                            
                             if (userError || !userData) {
                                 console.error('Error finding user:', userError);
                                 return new NextResponse('User not found', { status: 404 });
                             }
 
-                            // Upsert is_live status in stream_settings table
-                            const { data: updateData, error: updateError } = await supabase
+                            const { data: updateData, error: updateError } = await supabaseAdmin
                                 .from('stream_settings')
                                 .upsert(
                                     {
-                                        user_id: userData.id, // Use the found user's ID
+                                        user_id: userData.id,
                                         platform: platform,
                                         is_live: true,
-                                        platform_user_id: platformUserId // New field added
+                                        platform_user_id: platformUserId
                                     },
                                     { onConflict: 'user_id, platform' }
                                 );
@@ -149,20 +144,17 @@ export async function POST(request: Request) {
                     case 'stream.offline':
                         console.log('Stream ended:', data.event);
                         try {
-                            const supabase = createClient();
-                            const platform = 'twitch'; // Specify the platform, e.g., 'twitch'
-
-                            // Use broadcaster_user_id as platform_user_id
+                            const platform = 'twitch';
                             const platformUserId: string = data.event.broadcaster_user_id;
 
                             // Find the user by twitch_user_id
-                            const { data: userData, error: userError } = await supabase
+                            const { data: userData, error: userError } = await supabaseAdmin
                                 .from('users')
                                 .select('*')
                                 .eq('twitch_user_id', platformUserId)
                                 .single();
 
-                            if (userError) {
+                            if (userError || !userData) {
                                 console.error('Error finding user:', userError);
                                 return new NextResponse('User not found', { status: 404 });
                             }
