@@ -100,21 +100,16 @@ export async function POST(request: Request) {
                         console.log('Stream started:', data.event);
                         try {
                             const supabase = createClient();
-                            console.log('Checking for user...');
-                            const { data: user, error: userError } = await supabase
-                                .from('users')
-                                .select('*')
-                                .eq('twitch_user_id', data.event.broadcaster_user_id.toString())
-                                .single();
+                            
+                            // Assume you have access to the authorized user information
+                            const authorizedUser = await supabase.auth.getUser(); // Replace with actual method to get authorized user
+                            const twitchUserId = authorizedUser.data.user?.user_metadata?.provider_id;
 
-                            console.log('Found user:', user);
-                            console.log('User error:', userError);
-
-                            if (user) {
+                            if (authorizedUser && twitchUserId === data.event.broadcaster_user_id.toString()) {
                                 const { data: updateData, error: updateError } = await supabase
                                     .from('users')
                                     .update({ is_live: true })
-                                    .eq('twitch_user_id', data.event.broadcaster_user_id.toString())
+                                    .eq('twitch_user_id', twitchUserId)
                                     .select();
 
                                 console.log('Update error:', updateError);
