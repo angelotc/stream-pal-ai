@@ -101,20 +101,31 @@ export async function POST(request: Request) {
                             const supabase = createClient();
                             const platform = 'twitch'; // Specify the platform, e.g., 'twitch'
 
-                            // Ensure the user_id is a valid UUID
-                            const userId = data.event.broadcaster_user_id; // Ensure this is a UUID
+                            // Use broadcaster_user_id as platform_user_id
+                            const platformUserId: string = data.event.broadcaster_user_id;
 
-                            // If userId is not a UUID, you need to handle this case
-                            if (!isValidUUID(userId)) {
-                                console.error('Invalid UUID for user_id:', userId);
-                                return new NextResponse('Invalid user ID', { status: 400 });
+                            // Find the user by platformUserId
+                            const { data: userData, error: userError } = await supabase
+                                .from('users')
+                                .select('*')
+                                .eq('twitch_user_id', platformUserId)
+                                .single();
+
+                            if (userError || !userData) {
+                                console.error('Error finding user:', userError);
+                                return new NextResponse('User not found', { status: 404 });
                             }
 
                             // Upsert is_live status in stream_settings table
                             const { data: updateData, error: updateError } = await supabase
                                 .from('stream_settings')
                                 .upsert(
-                                    { user_id: userId, platform: platform, is_live: true },
+                                    {
+                                        user_id: userData.id, // Use the found user's ID
+                                        platform: platform,
+                                        is_live: true,
+                                        platform_user_id: platformUserId // New field added
+                                    },
                                     { onConflict: 'user_id, platform' }
                                 );
 
@@ -129,7 +140,7 @@ export async function POST(request: Request) {
                                 twitch_client: process.env.TWITCH_CLIENT_ID!
                             });
                             // Subscribe to Twitch chat messages
-                            await subscribeToChatMessages(userId, process.env.TWITCH_BOT_USER_ID!, accessToken);
+                            await subscribeToChatMessages(platformUserId, process.env.TWITCH_BOT_USER_ID!, accessToken);
                         } catch (error) {
                             console.error('Failed to handle stream start:', error);
                         }
@@ -194,10 +205,4 @@ export async function POST(request: Request) {
         console.error('Error processing webhook:', error);
         return new NextResponse('Internal Server Error', { status: 500 });
     }
-}
-
-// Helper function to validate UUID
-function isValidUUID(uuid: string): boolean {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(uuid);
 } 
