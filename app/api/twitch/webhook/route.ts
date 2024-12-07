@@ -101,12 +101,21 @@ export async function POST(request: Request) {
                             const supabase = createClient();
                             const platform = 'twitch'; // Specify the platform, e.g., 'twitch'
 
+                            // Ensure the user_id is a valid UUID
+                            const userId = data.event.broadcaster_user_id; // Ensure this is a UUID
+
+                            // If userId is not a UUID, you need to handle this case
+                            if (!isValidUUID(userId)) {
+                                console.error('Invalid UUID for user_id:', userId);
+                                return new NextResponse('Invalid user ID', { status: 400 });
+                            }
+
                             // Upsert is_live status in stream_settings table
                             const { data: updateData, error: updateError } = await supabase
                                 .from('stream_settings')
                                 .upsert(
-                                    { user_id: data.event.broadcaster_user_id, platform, is_live: true },
-                                    { onConflict:'user_id, platform' }
+                                    { user_id: userId, platform: platform, is_live: true },
+                                    { onConflict: 'user_id, platform' }
                                 );
 
                             if (updateError) {
@@ -120,7 +129,7 @@ export async function POST(request: Request) {
                                 twitch_client: process.env.TWITCH_CLIENT_ID!
                             });
                             // Subscribe to Twitch chat messages
-                            await subscribeToChatMessages(data.event.broadcaster_user_id, process.env.TWITCH_BOT_USER_ID!, accessToken);
+                            await subscribeToChatMessages(userId, process.env.TWITCH_BOT_USER_ID!, accessToken);
                         } catch (error) {
                             console.error('Failed to handle stream start:', error);
                         }
@@ -132,11 +141,20 @@ export async function POST(request: Request) {
                             const supabase = createClient();
                             const platform = 'twitch'; // Specify the platform, e.g., 'twitch'
 
+                            // Ensure the user_id is a valid UUID
+                            const userId = data.event.broadcaster_user_id; // Ensure this is a UUID
+
+                            // If userId is not a UUID, you need to handle this case
+                            if (!isValidUUID(userId)) {
+                                console.error('Invalid UUID for user_id:', userId);
+                                return new NextResponse('Invalid user ID', { status: 400 });
+                            }
+
                             // Upsert is_live status in stream_settings table
                             const { data: updateData, error: updateError } = await supabase
                                 .from('stream_settings')
                                 .upsert(
-                                    { user_id: data.event.broadcaster_user_id, platform, is_live: false },
+                                    { user_id: userId, platform: platform, is_live: false },
                                     { onConflict: 'user_id, platform' }
                                 );
 
@@ -176,4 +194,10 @@ export async function POST(request: Request) {
         console.error('Error processing webhook:', error);
         return new NextResponse('Internal Server Error', { status: 500 });
     }
+}
+
+// Helper function to validate UUID
+function isValidUUID(uuid: string): boolean {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
 } 
