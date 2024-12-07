@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { getToken } from '@/utils/twitch/auth';
 import { subscribeToChatMessages, unsubscribeFromChatMessages } from '@/utils/twitch/subscriptions';
 import { createClient } from '@/utils/supabase/server';
+import { Tables, TablesUpdate } from '@/types_db'; // Adjust the path as necessary
 
 // Message type constants
 const MESSAGE_TYPE_VERIFICATION = 'webhook_callback_verification';
@@ -100,10 +101,10 @@ export async function POST(request: Request) {
                         try {
                             const supabase = createClient();
                             console.log('Attempting to update is_live status for broadcaster:', data.event.broadcaster_user_id);
-                            
+                            console.log('Type:', typeof data.event.broadcaster_user_id);
                             const { data: updateData, error: updateError } = await supabase
                                 .from('users')
-                                .update({ is_live: true })
+                                .update<TablesUpdate<'users'>>({ is_live: true })
                                 .eq('twitch_user_id', data.event.broadcaster_user_id);
 
                             if (updateError) {
@@ -131,7 +132,7 @@ export async function POST(request: Request) {
                             await supabase
                                 .from('users')
                                 .update({ is_live: false })
-                                .eq('twitch_user_id', data.event.broadcaster_user_id);
+                                .eq('twitch_user_id', String(data.event.broadcaster_user_id));
                             // Unsubscribe from Twitch chat messages
                             const accessToken = await getToken({
                                 twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
