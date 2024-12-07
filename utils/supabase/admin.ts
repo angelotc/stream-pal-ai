@@ -6,6 +6,8 @@ import type { Database, Tables, TablesInsert } from 'types_db';
 
 type Product = Tables<'products'>;
 type Price = Tables<'prices'>;
+type Message = Tables<'messages'>;
+type StreamSettings = Tables<'stream_settings'>;
 
 // Change to control trial period length
 const TRIAL_PERIOD_DAYS = 0;
@@ -284,11 +286,72 @@ const manageSubscriptionStatusChange = async (
     );
 };
 
+const updateStreamStatus = async (
+  platformUserId: string,
+  isLive: boolean
+) => {
+  // Find the user by twitch_user_id
+  const { data: userData, error: userError } = await supabaseAdmin
+    .from('users')
+    .select('*')
+    .eq('twitch_user_id', platformUserId)
+    .single();
+
+  if (userError || !userData) {
+    console.error('Error finding user:', userError);
+    throw new Error(`User not found for platformUserId: ${platformUserId}`);
+  }
+
+  // Upsert stream settings
+  const { error: updateError } = await supabaseAdmin
+    .from('stream_settings')
+    .upsert(
+      {
+        user_id: userData.id,
+        platform: 'twitch',
+        is_live: isLive,
+        platform_user_id: platformUserId
+      },
+      { onConflict: 'user_id, platform' }
+    );
+
+  if (updateError) {
+    console.error('Error updating stream status:', updateError);
+    throw new Error(`Failed to update stream status: ${updateError.message}`);
+  }
+
+  return userData;
+};
+
+const insertChatMessage = async (messageData: {
+  text: string;
+  broadcaster_user_id: string;
+  chatter_user_name: string;
+}) => {
+  const { error } = await supabaseAdmin
+    .from('messages')
+    .insert({
+      text: messageData.text,
+      type: 'twitch',
+      user_id: messageData.broadcaster_user_id,
+      chatter_user_name: messageData.chatter_user_name,
+      broadcaster_twitch_id: messageData.broadcaster_user_id,
+      timestamp: new Date().toISOString()
+    });
+
+  if (error) {
+    console.error('Error saving chat message:', error);
+    throw new Error(`Failed to save chat message: ${error.message}`);
+  }
+};
+
 export {
   upsertProductRecord,
   upsertPriceRecord,
   deleteProductRecord,
   deletePriceRecord,
   createOrRetrieveCustomer,
-  manageSubscriptionStatusChange
+  manageSubscriptionStatusChange,
+  updateStreamStatus,
+  insertChatMessage
 };

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getToken } from '@/utils/twitch/auth';
 import { subscribeToChatMessages, unsubscribeFromChatMessages } from '@/utils/twitch/subscriptions';
-import { supabaseAdmin } from '@/utils/supabase/admin';
+import {  updateStreamStatus, insertChatMessage } from '@/utils/supabase/admin';
 
 // Message type constants
 const MESSAGE_TYPE_VERIFICATION = 'webhook_callback_verification';
@@ -70,25 +70,12 @@ export async function POST(request: Request) {
                 switch (data.subscription.type) {
                     case 'channel.chat.message':
                         console.log('Chat message received:', data.event);
-                        const supabase = createClient();
-
                         try {
-                            const { error } = await supabase
-                                .from('messages')
-                                .insert({
-                                    text: data.event.message.text,
-                                    type: 'twitch',
-                                    user_id: data.event.broadcaster_user_id,
-                                    chatter_user_name: data.event.chatter_user_name,
-                                    broadcaster_id: data.event.broadcaster_user_id,
-                                    timestamp: new Date().toISOString()
-                                });
-
-                            if (error) {
-                                console.error('Error saving twitch message:', error);
-                                return new NextResponse('Error saving message', { status: 500 });
-                            }
-
+                            await insertChatMessage({
+                                text: data.event.message.text,
+                                broadcaster_user_id: data.event.broadcaster_user_id,
+                                chatter_user_name: data.event.chatter_user_name
+                            });
                             return new NextResponse(null, { status: 204 });
                         } catch (error) {
                             console.error('Failed to save twitch message:', error);
@@ -98,96 +85,43 @@ export async function POST(request: Request) {
                     case 'stream.online':
                         console.log('Stream started:', data.event);
                         try {
-                            const platform = 'twitch';
-                            const platformUserId: string = data.event.broadcaster_user_id;
-
-                            const { data: userData, error: userError } = await supabaseAdmin
-                                .from('users')
-                                .select('*')
-                                .eq('twitch_user_id', platformUserId)
-                                .single();
+                            const userData = await updateStreamStatus(
+                                data.event.broadcaster_user_id,
+                                true
+                            );
                             
-                            if (userError || !userData) {
-                                console.error('Error finding user:', userError);
-                                return new NextResponse('User not found', { status: 404 });
-                            }
-
-                            const { data: updateData, error: updateError } = await supabaseAdmin
-                                .from('stream_settings')
-                                .upsert(
-                                    {
-                                        user_id: userData.id,
-                                        platform: platform,
-                                        is_live: true,
-                                        platform_user_id: platformUserId
-                                    },
-                                    { onConflict: 'user_id, platform' }
-                                );
-
-                            if (updateError) {
-                                console.error('Error updating is_live status:', updateError);
-                            } else {
-                                console.log('is_live status updated successfully:', updateData);
-                            }
-
                             const accessToken = await getToken({
                                 twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
                                 twitch_client: process.env.TWITCH_CLIENT_ID!
                             });
-                            // Subscribe to Twitch chat messages
-                            await subscribeToChatMessages(platformUserId, process.env.TWITCH_BOT_USER_ID!, accessToken);
+                            await subscribeToChatMessages(data.event.broadcaster_user_id, process.env.TWITCH_BOT_USER_ID!, accessToken);
+                            
+                            return new NextResponse(null, { status: 204 });
                         } catch (error) {
                             console.error('Failed to handle stream start:', error);
+                            return new NextResponse('Internal Server Error', { status: 500 });
                         }
-                        return new NextResponse(null, { status: 204 });
-
+                        break;
                     case 'stream.offline':
                         console.log('Stream ended:', data.event);
                         try {
-                            const platform = 'twitch';
-                            const platformUserId: string = data.event.broadcaster_user_id;
-
-                            // Find the user by twitch_user_id
-                            const { data: userData, error: userError } = await supabaseAdmin
-                                .from('users')
-                                .select('*')
-                                .eq('twitch_user_id', platformUserId)
-                                .single();
-
-                            if (userError || !userData) {
-                                console.error('Error finding user:', userError);
-                                return new NextResponse('User not found', { status: 404 });
-                            }
-
-                            // Upsert is_live status in stream_settings table
-                            const { data: updateData, error: updateError } = await supabase
-                                .from('stream_settings')
-                                .upsert(
-                                    {
-                                        user_id: userData.id, // Use the found user's ID
-                                        platform: platform,
-                                        is_live: false,
-                                        platform_user_id: platformUserId // New field added
-                                    },
-                                    { onConflict: 'user_id , platform' }
-                                );
-
-                            if (updateError) {
-                                console.error('Error updating is_live status:', updateError);
-                            } else {
-                                console.log('is_live status updated successfully:', updateData);
-                            }
-
+                            const userData = await updateStreamStatus(
+                                data.event.broadcaster_user_id,
+                                false
+                            );
+                            
                             const accessToken = await getToken({
                                 twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
                                 twitch_client: process.env.TWITCH_CLIENT_ID!
                             });
-                            // Unsubscribe from Twitch chat messages
-                            await unsubscribeFromChatMessages(platformUserId, accessToken);
+                            await unsubscribeFromChatMessages(data.event.broadcaster_user_id, accessToken);
+                            
+                            return new NextResponse(null, { status: 204 });
                         } catch (error) {
                             console.error('Failed to handle stream end:', error);
+                            return new NextResponse('Internal Server Error', { status: 500 });
                         }
-                        return new NextResponse(null, { status: 204 });
+                        break;
                     default:
                         console.log('Unknown event type:', data.subscription.type);
                 }
