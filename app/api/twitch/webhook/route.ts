@@ -155,14 +155,14 @@ export async function POST(request: Request) {
                             // Use broadcaster_user_id as platform_user_id
                             const platformUserId: string = data.event.broadcaster_user_id;
 
-                            // Find the user by platformUserId
+                            // Find the user by twitch_user_id
                             const { data: userData, error: userError } = await supabase
                                 .from('users')
                                 .select('*')
-                                .eq('platform_user_id', platformUserId)
+                                .eq('twitch_user_id', platformUserId)
                                 .single();
 
-                            if (userError || !userData) {
+                            if (userError) {
                                 console.error('Error finding user:', userError);
                                 return new NextResponse('User not found', { status: 404 });
                             }
@@ -171,8 +171,13 @@ export async function POST(request: Request) {
                             const { data: updateData, error: updateError } = await supabase
                                 .from('stream_settings')
                                 .upsert(
-                                    { user_id: userData.id, platform: platform, is_live: false },
-                                    { onConflict: 'user_id, platform' }
+                                    {
+                                        user_id: userData.id, // Use the found user's ID
+                                        platform: platform,
+                                        is_live: false,
+                                        platform_user_id: platformUserId // New field added
+                                    },
+                                    { onConflict: 'user_id , platform' }
                                 );
 
                             if (updateError) {
@@ -186,7 +191,7 @@ export async function POST(request: Request) {
                                 twitch_client: process.env.TWITCH_CLIENT_ID!
                             });
                             // Unsubscribe from Twitch chat messages
-                            await unsubscribeFromChatMessages(data.event.broadcaster_user_id, accessToken);
+                            await unsubscribeFromChatMessages(platformUserId, accessToken);
                         } catch (error) {
                             console.error('Failed to handle stream end:', error);
                         }
