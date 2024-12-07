@@ -3,7 +3,6 @@ import crypto from 'crypto';
 import { getToken } from '@/utils/twitch/auth';
 import { subscribeToChatMessages, unsubscribeFromChatMessages } from '@/utils/twitch/subscriptions';
 import { createClient } from '@/utils/supabase/server';
-import { Tables, TablesUpdate } from '@/types_db'; // Adjust the path as necessary
 
 // Message type constants
 const MESSAGE_TYPE_VERIFICATION = 'webhook_callback_verification';
@@ -72,7 +71,7 @@ export async function POST(request: Request) {
                     case 'channel.chat.message':
                         console.log('Chat message received:', data.event);
                         const supabase = createClient();
-                        
+
                         try {
                             const { error } = await supabase
                                 .from('messages')
@@ -89,7 +88,7 @@ export async function POST(request: Request) {
                                 console.error('Error saving twitch message:', error);
                                 return new NextResponse('Error saving message', { status: 500 });
                             }
-                            
+
                             return new NextResponse(null, { status: 204 });
                         } catch (error) {
                             console.error('Failed to save twitch message:', error);
@@ -104,13 +103,17 @@ export async function POST(request: Request) {
                             const { data: user, error: userError } = await supabase
                                 .from('users')
                                 .select('*')
-                                .eq('twitch_user_id', data.event.broadcaster_user_id.toString())
-                                .single();
+                                .eq('twitch_user_id', data.event.broadcaster_user_id.toString());
 
-                            console.log('Found user:', user);
+                            // Use first result instead of .single()
+                            const foundUser = user?.[0];
+
+
+
+                            console.log('Found user:', foundUser);
                             console.log('User error:', userError);
 
-                            if (user) {
+                            if (foundUser) {
                                 const { data: updateData, error: updateError } = await supabase
                                     .from('users')
                                     .update({ is_live: true })
