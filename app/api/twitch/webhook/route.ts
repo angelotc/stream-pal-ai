@@ -99,29 +99,20 @@ export async function POST(request: Request) {
                         console.log('Stream started:', data.event);
                         try {
                             const supabase = createClient();
-                            console.log('Checking for user...');
-                            const { data: user, error: userError } = await supabase
-                                .from('users')
-                                .select('*')
-                                .eq('twitch_user_id', data.event.broadcaster_user_id.toString());
+                            const platform = 'twitch'; // Specify the platform, e.g., 'twitch'
 
-                            // Use first result instead of .single()
-                            const foundUser = user?.[0];
+                            // Upsert is_live status in stream_settings table
+                            const { data: updateData, error: updateError } = await supabase
+                                .from('stream_settings')
+                                .upsert(
+                                    { user_id: data.event.broadcaster_user_id, platform, is_live: true },
+                                    { onConflict: 'user_id'}
+                                );
 
-
-
-                            console.log('Found user:', foundUser);
-                            console.log('User error:', userError);
-
-                            if (foundUser) {
-                                const { data: updateData, error: updateError } = await supabase
-                                    .from('users')
-                                    .update({ is_live: true })
-                                    .eq('twitch_user_id', data.event.broadcaster_user_id.toString())
-                                    .select();
-
-                                console.log('Update error:', updateError);
-                                console.log('Updated data:', updateData);
+                            if (updateError) {
+                                console.error('Error updating is_live status:', updateError);
+                            } else {
+                                console.log('is_live status updated successfully:', updateData);
                             }
 
                             const accessToken = await getToken({
@@ -139,16 +130,27 @@ export async function POST(request: Request) {
                         console.log('Stream ended:', data.event);
                         try {
                             const supabase = createClient();
-                            // Update is_live status in users table
-                            await supabase
-                                .from('users')
-                                .update({ is_live: false })
-                                .eq('twitch_user_id', data.event.broadcaster_user_id.toString());
-                            // Unsubscribe from Twitch chat messages
+                            const platform = 'twitch'; // Specify the platform, e.g., 'twitch'
+
+                            // Upsert is_live status in stream_settings table
+                            const { data: updateData, error: updateError } = await supabase
+                                .from('stream_settings')
+                                .upsert(
+                                    { user_id: data.event.broadcaster_user_id, platform, is_live: false },
+                                    { onConflict: 'user_id' }
+                                );
+
+                            if (updateError) {
+                                console.error('Error updating is_live status:', updateError);
+                            } else {
+                                console.log('is_live status updated successfully:', updateData);
+                            }
+
                             const accessToken = await getToken({
                                 twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
                                 twitch_client: process.env.TWITCH_CLIENT_ID!
                             });
+                            // Unsubscribe from Twitch chat messages
                             await unsubscribeFromChatMessages(data.event.broadcaster_user_id, accessToken);
                         } catch (error) {
                             console.error('Failed to handle stream end:', error);
