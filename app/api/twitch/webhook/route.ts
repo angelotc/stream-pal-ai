@@ -100,20 +100,27 @@ export async function POST(request: Request) {
                         console.log('Stream started:', data.event);
                         try {
                             const supabase = createClient();
-                            console.log('Attempting to update is_live status for broadcaster:', data.event.broadcaster_user_id);
-                            console.log('Type:', typeof data.event.broadcaster_user_id);
-                            const { data: updateData, error: updateError } = await supabase
+                            console.log('Checking for user...');
+                            const { data: user, error: userError } = await supabase
                                 .from('users')
-                                .update({ is_live: true })
-                                .eq('twitch_user_id', data.event.broadcaster_user_id.toString());
+                                .select('*')
+                                .eq('twitch_user_id', data.event.broadcaster_user_id.toString())
+                                .single();
 
-                            if (updateError) {
-                                console.error('Error updating user:', updateError);
-                                return;
+                            console.log('Found user:', user);
+                            console.log('User error:', userError);
+
+                            if (user) {
+                                const { data: updateData, error: updateError } = await supabase
+                                    .from('users')
+                                    .update({ is_live: true })
+                                    .eq('twitch_user_id', data.event.broadcaster_user_id.toString())
+                                    .select();
+
+                                console.log('Update error:', updateError);
+                                console.log('Updated data:', updateData);
                             }
 
-                            console.log('Update successful:', updateData);
-                            
                             const accessToken = await getToken({
                                 twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
                                 twitch_client: process.env.TWITCH_CLIENT_ID!
