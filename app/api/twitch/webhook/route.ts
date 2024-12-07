@@ -137,7 +137,7 @@ export async function POST(request: Request) {
                                 .from('stream_settings')
                                 .upsert(
                                     { user_id: data.event.broadcaster_user_id, platform, is_live: false },
-                                    { onConflict: :'user_id, platform' }
+                                    { onConflict: 'user_id, platform' }
                                 );
 
                             if (updateError) {
