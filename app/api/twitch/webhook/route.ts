@@ -104,14 +104,15 @@ export async function POST(request: Request) {
                             console.log('Type:', typeof data.event.broadcaster_user_id);
                             const { data: updateData, error: updateError } = await supabase
                                 .from('users')
-                                .update<TablesUpdate<'users'>>({ is_live: true })
-                                .eq('twitch_user_id', data.event.broadcaster_user_id);
+                                .update({ is_live: true })
+                                .eq('twitch_user_id', data.event.broadcaster_user_id.toString());
 
                             if (updateError) {
-                                console.error('Failed to update is_live status:', updateError);
-                            } else {
-                                console.log('Update result:', updateData);
+                                console.error('Error updating user:', updateError);
+                                return;
                             }
+
+                            console.log('Update successful:', updateData);
                             
                             const accessToken = await getToken({
                                 twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
