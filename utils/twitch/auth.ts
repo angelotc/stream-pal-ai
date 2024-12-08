@@ -1,5 +1,7 @@
 import { TokenRefresh, TokenValidation, Twitch } from '@/types/twitch';
 
+export const TWITCH_SCOPES = 'channel:read:subscriptions channel:manage:broadcast chat:read chat:edit';
+
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
 export const getToken = async ({ twitch_secret, twitch_client }: TokenRefresh) => {
@@ -17,7 +19,8 @@ export const getToken = async ({ twitch_secret, twitch_client }: TokenRefresh) =
     body: new URLSearchParams({
       client_id: twitch_client,
       client_secret: twitch_secret,
-      grant_type: 'client_credentials'
+      grant_type: 'client_credentials',
+      scopes: TWITCH_SCOPES
     })
   });
 
