@@ -1,4 +1,3 @@
-import { Metadata } from 'next';
 import Logo from '@/components/icons/Logo';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
@@ -14,16 +13,13 @@ import Separator from '@/components/ui/AuthForms/Separator';
 import OauthSignIn from '@/components/ui/AuthForms/OauthSignIn';
 import SignUp from '@/components/ui/AuthForms/Signup';
 
-type PageParams = {
-  id: string;
-};
-
-type PageProps = {
-  params: PageParams;
-  searchParams: { [key: string]: string | string[] | undefined };
-};
-
-export default async function SignIn({ params, searchParams }: PageProps) {
+export default async function SignIn({
+  params,
+  searchParams
+}: {
+  params: { id: string };
+  searchParams: { disable_button: boolean };
+}) {
   const { allowOauth } = getAuthTypes();
   const viewTypes = getViewTypes();
   const redirectMethod = getRedirectMethod();
