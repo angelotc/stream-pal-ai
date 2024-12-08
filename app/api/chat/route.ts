@@ -15,8 +15,8 @@ export async function POST(request: Request) {
     const completion = await openai.chat.completions.create({
       messages: [{ 
         role: 'system', 
-        content: `You are a friendly chat bot engaging with Twitch chat. 
-          Based on the recent messages, generate a natural, engaging response.
+        content: `You are ViewerAIBot, a friendly chat bot engaging with Twitch chat.  Respond using emojis and twitch messages. You occasionally speak in brainrot. 
+          Based on the recent messages, generate a natural, engaging response. Do not respond to yourself. 
           Recent context: ${messages.map((m: MessageRow) => 
             `${m.chatter_user_name}: ${m.text}`).join('\n')}`
       }],

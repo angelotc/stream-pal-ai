@@ -2,14 +2,9 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { unstable_cache } from 'next/cache';
 
 export const getUser = async (supabase: SupabaseClient) => {
-  return unstable_cache(
-    async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      return user;
-    },
-    ['user'],
-    { revalidate: 60 }
-  )();
+  // Don't cache user state to ensure we always have fresh auth data
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
 };
 
 export const getSubscription = async (supabase: SupabaseClient) => {
@@ -23,7 +18,7 @@ export const getSubscription = async (supabase: SupabaseClient) => {
       return subscription;
     },
     ['subscription'],
-    { revalidate: 60 }
+    { revalidate: 60, tags: ['subscription'] }
   )();
 };
 
@@ -40,20 +35,25 @@ export const getProducts = async (supabase: SupabaseClient) => {
       return products;
     },
     ['products'],
-    { revalidate: 3600 }
+    { revalidate: 3600, tags: ['products'] }
   )();
 };
 
 export const getUserDetails = async (supabase: SupabaseClient) => {
+  // Reduced cache time and added user-specific key
   return unstable_cache(
     async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      
       const { data: userDetails } = await supabase
         .from('users')
         .select('*')
+        .eq('id', user.id)
         .single();
       return userDetails;
     },
     ['user-details'],
-    { revalidate: 60 }
+    { revalidate: 10, tags: ['user-details'] } // Reduced to 10 seconds
   )();
 };
