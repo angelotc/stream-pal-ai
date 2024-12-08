@@ -111,15 +111,7 @@ export default function MessagesForm() {
           (payload) => {
             console.log('New message received:', payload);
             const newMessage = payload.new as MessageRow;
-            setMessages(prev => {
-              // Check for duplicates
-              const exists = prev.some(msg => msg.id === newMessage.id);
-              if (exists) {
-                console.log('Duplicate message detected, skipping:', newMessage.id);
-                return prev;
-              }
-              return [newMessage, ...prev];
-            });
+            setMessages(prev => [newMessage, ...prev]);
           }
         )
         .subscribe((status) => {
@@ -134,7 +126,6 @@ export default function MessagesForm() {
 
     setupSubscription();
   }, [supabase]);
-
   useEffect(() => {
     setupMicrophone();
     // eslint-disable-next-line react-hooks/exhaustive-deps
