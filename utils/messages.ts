@@ -22,8 +22,9 @@ function shouldInteract(lastInteractionTime: string | null): boolean {
 }
 
 async function generateAIResponse(messages: ChatMessage[]) {
+    const openaiKey = await fetch('/api/openai/key').then(res => res.json());
     const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY
+        apiKey: openaiKey.key
     });
 
     const prompt = `You are a friendly chat bot engaging with Twitch chat. 
