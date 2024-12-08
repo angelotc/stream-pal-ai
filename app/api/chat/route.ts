@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { Database } from '@/types_db'
-import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
-
 type MessageRow = Database['public']['Tables']['messages']['Row']
 
 const openai = new OpenAI({
@@ -16,7 +14,9 @@ export async function POST(request: Request) {
     // Create a more structured context from messages
     const messageContext = messages.map((m: MessageRow) => ({
       // For twitch messages, check if it's from the bot (no chatter_user_name)
-      role: (m.type === 'twitch' && !m.chatter_user_name ? 'assistant' : 'user') as const,
+      role: m.type === 'twitch' && !m.chatter_user_name 
+        ? ('assistant' as const) 
+        : ('user' as const),
       // For bot messages, use 'ViewerAIBot' as the username
       username: m.type === 'twitch' && !m.chatter_user_name 
         ? 'ViewerAIBot' 
@@ -54,6 +54,3 @@ export async function POST(request: Request) {
     );
   }
 }    { status: 500 }
-    );
-  }
-} 
