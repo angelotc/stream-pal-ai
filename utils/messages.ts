@@ -8,6 +8,7 @@ type MessageRow = Database['public']['Tables']['messages']['Row'];
 type ChatMessage = {
     text: string;
     chatter_user_name: string;
+    user_id: string;
 };
 
 const INTERACTION_COOLDOWN = 10 * 1000; // 10 seconds
@@ -77,25 +78,24 @@ export const saveMessage = async (
       console.log('Cooldown passed, fetching recent messages...');
       const { data: recentMessages } = await supabase
         .from('messages')
-        .select('*')
+        .select(`
+          *,
+          users!inner (
+            twitch_user_id
+          )
+        `)
         .eq('broadcaster_twitch_id', user.user_metadata?.provider_id)
         .order('created_at', { ascending: false })
         .limit(MESSAGE_CONTEXT_SIZE);
 
       if (recentMessages) {
         console.log(`Processing ${recentMessages.length} recent messages`);
-        const formattedMessages: ChatMessage[] = recentMessages
-          .filter((m): m is MessageRow & { chatter_user_name: string; text: string } => 
-            m.chatter_user_name !== null && 
-            m.text !== null && 
-            typeof m.text === 'string' && 
-            typeof m.chatter_user_name === 'string'
-          )
-          .map(m => ({
-            text: m.text,
-            chatter_user_name: m.chatter_user_name
-          }));
-
+        const formattedMessages: ChatMessage[] = recentMessages.map(m => ({
+          text: m.text ?? '',
+          chatter_user_name: m.chatter_user_name ?? 'anonymous',
+          user_id: m.users.twitch_user_id ?? 'unknown'
+        }));
+        console.log('Formatted messages:', formattedMessages);
         // Generate and send AI response
         console.log('Generating AI response...');
         const response = await generateAIResponse(formattedMessages);

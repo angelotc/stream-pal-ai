@@ -62,13 +62,7 @@ export default function MessagesForm() {
       
       const { data, error } = await supabase
         .from('messages')
-        .select(`
-          *,
-          users (
-            id,
-            twitch_user_id
-          )
-        `)
+        .select('*')
         .eq('broadcaster_twitch_id', twitchUserId)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -103,27 +97,9 @@ export default function MessagesForm() {
             table: 'messages',
             filter: `broadcaster_twitch_id=eq.${twitchUserId}` 
           }, 
-          async (payload) => {
-            // Fetch the complete message with user data
-            const { data, error } = await supabase
-              .from('messages')
-              .select(`
-                *,
-                users (
-                  id,
-                  twitch_user_id
-                )
-              `)
-              .eq('id', payload.new.id);
-            
-            if (error) {
-              console.error('Error fetching message data:', error);
-              return;
-            }
-            
-            if (data) {
-              setMessages(prev => [data[0], ...prev]);
-            }
+          (payload) => {
+            const newMessage = payload.new as MessageRow;
+            setMessages(prev => [newMessage, ...prev]);
           }
         )
         .subscribe();
