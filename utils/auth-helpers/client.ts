@@ -38,6 +38,7 @@ export async function signInWithOAuth(e: React.FormEvent<HTMLFormElement>) {
   await supabase.auth.signInWithOAuth({
     provider: provider,
     options: {
+      scopes: 'channel:read:subscriptions channel:manage:broadcast chat:read chat:edit',
       redirectTo: redirectURL
     }
   });
