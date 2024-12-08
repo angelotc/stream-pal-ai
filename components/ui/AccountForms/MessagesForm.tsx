@@ -60,12 +60,22 @@ export default function MessagesForm() {
       const twitchUserId = user?.user_metadata?.provider_id;
       console.log('Loading messages for Twitch ID:', twitchUserId);
       
+      if (!twitchUserId) {
+        console.error('No Twitch ID found for user');
+        return;
+      }
+
+      // Get messages from the last 7 days by default
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
       const { data, error } = await supabase
         .from('messages')
         .select('*')
         .eq('broadcaster_twitch_id', twitchUserId)
+        .gte('created_at', sevenDaysAgo.toISOString())
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100);
       
       console.log('Messages query result:', { data, error });
       
@@ -100,7 +110,15 @@ export default function MessagesForm() {
           (payload) => {
             console.log('New message received:', payload);
             const newMessage = payload.new as MessageRow;
-            setMessages(prev => [newMessage, ...prev]);
+            setMessages(prev => {
+              // Check for duplicates
+              const exists = prev.some(msg => msg.id === newMessage.id);
+              if (exists) {
+                console.log('Duplicate message detected, skipping:', newMessage.id);
+                return prev;
+              }
+              return [newMessage, ...prev];
+            });
           }
         )
         .subscribe((status) => {
