@@ -1,6 +1,6 @@
 import { TokenRefresh, TokenValidation, Twitch } from '@/types/twitch';
 
-export const TWITCH_SCOPES = 'channel:read:subscriptions channel:manage:broadcast chat:read chat:edit';
+export const TWITCH_SCOPES = 'channel:read:subscriptions channel:manage:broadcast chat:read chat:edit user:write:chat user:read:chat';
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
