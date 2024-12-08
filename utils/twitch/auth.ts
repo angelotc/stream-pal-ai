@@ -20,7 +20,7 @@ export const getToken = async ({ twitch_secret, twitch_client }: TokenRefresh) =
       client_id: twitch_client,
       client_secret: twitch_secret,
       grant_type: 'client_credentials',
-      scopes: TWITCH_SCOPES
+      scope: TWITCH_SCOPES
     })
   });
 
