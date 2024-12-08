@@ -45,6 +45,7 @@ const Message = ({ message }: { message: MessageRow }) => (
 export default function MessagesForm() {
   const [caption, setCaption] = useState<string | undefined>("Powered by Deepgram");
   const [messages, setMessages] = useState<MessageRow[]>([]);
+  const [lastTranscript, setLastTranscript] = useState<{ text: string; timestamp: number } | null>(null);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
   const captionTimeout = useRef<NodeJS.Timeout>();
@@ -170,16 +171,46 @@ export default function MessagesForm() {
       }
 
       if (isFinal && speechFinal && thisCaption.trim() !== "") {
-        const { error } = await saveMessage(thisCaption, 'transcript');
-        if (error) {
-          console.error('Failed to save transcript:', error);
+        const currentTime = Date.now();
+        
+        if (lastTranscript && 
+            (currentTime - lastTranscript.timestamp) < 2000) {
+          // Less than 2 seconds apart, concatenate
+          const concatenatedText = `${lastTranscript.text} ${thisCaption}`;
+          setLastTranscript({
+            text: concatenatedText,
+            timestamp: currentTime
+          });
+          setCaption(concatenatedText);
+        } else {
+          // More than 2 seconds apart or no previous transcript
+          if (lastTranscript) {
+            // Save the previous concatenated transcript
+            const { error } = await saveMessage(lastTranscript.text, 'transcript');
+            if (error) {
+              console.error('Failed to save concatenated transcript:', error);
+            }
+          }
+          
+          // Start new concatenation
+          setLastTranscript({
+            text: thisCaption,
+            timestamp: currentTime
+          });
         }
         
         clearTimeout(captionTimeout.current);
         captionTimeout.current = setTimeout(() => {
+          // Save any remaining transcript when the timeout occurs
+          if (lastTranscript) {
+            saveMessage(lastTranscript.text, 'transcript').catch(error => {
+              console.error('Failed to save final transcript:', error);
+            });
+            setLastTranscript(null);
+          }
           setCaption(undefined);
           clearTimeout(captionTimeout.current);
-        }, 3000);
+        }, 2000);
       }
     };
 
