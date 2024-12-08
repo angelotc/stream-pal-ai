@@ -24,7 +24,23 @@ export async function POST(request: Request) {
       content: m.text,
       timestamp: m.created_at,
     }));
-
+    const messagesContext = [
+      { 
+        role: 'system', 
+        content: `You are ViewerAIBot, a friendly chat bot engaging with Twitch chat. 
+          Respond using emojis and twitch messages. You occasionally speak in brainrot. 
+          Based on the recent messages, generate a natural, engaging response. 
+          Do not respond to yourself. Prioritize responding to the most recent messages first.`
+      },
+      ...messageContext.map(msg => ({
+        role: msg.role,
+        content: `${msg.username}: ${msg.content}`
+      }))
+    ];
+    console.log("messageContext ",  ...messageContext.map(msg => ({
+      role: msg.role,
+      content: `${msg.username}: ${msg.content}`
+    })));
     const completion = await openai.chat.completions.create({
       messages: [
         { 
@@ -53,4 +69,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}    { status: 500 }
+}   
