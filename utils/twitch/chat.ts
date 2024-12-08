@@ -18,6 +18,8 @@ export async function sendTwitchMessage(broadcasterId: string, message: string) 
             body: JSON.stringify({
                 broadcaster_id: broadcasterId,
                 message: message,
+                // Optional: reply to a specific message
+                // reply_parent_message_id: 'message-id'
             })
         });
 

@@ -54,7 +54,6 @@ export async function POST(request: Request) {
                         response
                     );
                 }
-
                 // Update last interaction timestamp
                 await updateLastInteraction(stream.platform_user_id!);
             }
