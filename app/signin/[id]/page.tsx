@@ -13,13 +13,15 @@ import Separator from '@/components/ui/AuthForms/Separator';
 import OauthSignIn from '@/components/ui/AuthForms/OauthSignIn';
 import SignUp from '@/components/ui/AuthForms/Signup';
 
+type PageProps = {
+  params: { id: string };
+  searchParams: { disable_button?: boolean };
+};
+
 export default async function SignIn({
   params,
   searchParams
-}: {
-  params: { id: string };
-  searchParams: { disable_button: boolean };
-}) {
+}: PageProps) {
   const { allowOauth } = getAuthTypes();
   const viewTypes = getViewTypes();
   const redirectMethod = getRedirectMethod();
