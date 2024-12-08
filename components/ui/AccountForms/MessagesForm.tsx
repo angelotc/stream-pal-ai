@@ -45,7 +45,6 @@ const Message = ({ message }: { message: MessageRow }) => (
 export default function MessagesForm() {
   const [caption, setCaption] = useState<string | undefined>("Powered by Deepgram");
   const [messages, setMessages] = useState<MessageRow[]>([]);
-  const [lastTranscript, setLastTranscript] = useState<{ text: string; timestamp: number } | null>(null);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
   const captionTimeout = useRef<NodeJS.Timeout>();
@@ -61,22 +60,12 @@ export default function MessagesForm() {
       const twitchUserId = user?.user_metadata?.provider_id;
       console.log('Loading messages for Twitch ID:', twitchUserId);
       
-      if (!twitchUserId) {
-        console.error('No Twitch ID found for user');
-        return;
-      }
-
-      // Get messages from the last 7 days by default
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
       const { data, error } = await supabase
         .from('messages')
         .select('*')
         .eq('broadcaster_twitch_id', twitchUserId)
-        .gte('created_at', sevenDaysAgo.toISOString())
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(50);
       
       console.log('Messages query result:', { data, error });
       
@@ -109,23 +98,18 @@ export default function MessagesForm() {
             filter: `broadcaster_twitch_id=eq.${twitchUserId}` 
           }, 
           (payload) => {
-            console.log('New message received:', payload);
             const newMessage = payload.new as MessageRow;
             setMessages(prev => [newMessage, ...prev]);
           }
         )
-        .subscribe((status) => {
-          console.log('Subscription status:', status);
-        });
+        .subscribe();
 
-      return () => {
-        console.log('Cleaning up subscription');
-        supabase.removeChannel(channel);
-      };
+      return () => supabase.removeChannel(channel);
     };
 
     setupSubscription();
   }, [supabase]);
+
   useEffect(() => {
     setupMicrophone();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -162,46 +146,16 @@ export default function MessagesForm() {
       }
 
       if (isFinal && speechFinal && thisCaption.trim() !== "") {
-        const currentTime = Date.now();
-        
-        if (lastTranscript && 
-            (currentTime - lastTranscript.timestamp) < 2000) {
-          // Less than 2 seconds apart, concatenate
-          const concatenatedText = `${lastTranscript.text} ${thisCaption}`;
-          setLastTranscript({
-            text: concatenatedText,
-            timestamp: currentTime
-          });
-          setCaption(concatenatedText);
-        } else {
-          // More than 2 seconds apart or no previous transcript
-          if (lastTranscript) {
-            // Save the previous concatenated transcript
-            const { error } = await saveMessage(lastTranscript.text, 'transcript');
-            if (error) {
-              console.error('Failed to save concatenated transcript:', error);
-            }
-          }
-          
-          // Start new concatenation
-          setLastTranscript({
-            text: thisCaption,
-            timestamp: currentTime
-          });
+        const { error } = await saveMessage(thisCaption, 'transcript');
+        if (error) {
+          console.error('Failed to save transcript:', error);
         }
         
         clearTimeout(captionTimeout.current);
         captionTimeout.current = setTimeout(() => {
-          // Save any remaining transcript when the timeout occurs
-          if (lastTranscript) {
-            saveMessage(lastTranscript.text, 'transcript').catch(error => {
-              console.error('Failed to save final transcript:', error);
-            });
-            setLastTranscript(null);
-          }
           setCaption(undefined);
           clearTimeout(captionTimeout.current);
-        }, 2000);
+        }, 3000);
       }
     };
 
