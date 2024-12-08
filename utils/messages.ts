@@ -22,24 +22,17 @@ function shouldInteract(lastInteractionTime: string | null): boolean {
 }
 
 async function generateAIResponse(messages: ChatMessage[]) {
-    const openaiKey = await fetch('/api/openai/key').then(res => res.json());
-    const openai = new OpenAI({
-        apiKey: openaiKey.key
+    const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages })
     });
-
-    const prompt = `You are a friendly chat bot engaging with Twitch chat. 
-        Based on the recent messages, generate a natural, engaging response.
-        Recent context: ${messages.map(m => `${m.chatter_user_name}: ${m.text}`).join('\n')}`;
-
-    const completion = await openai.chat.completions.create({
-        messages: [{ role: 'system', content: prompt }],
-        model: "gpt-3.5-turbo",
-        max_tokens: 100,
-        temperature: 0.7
-    });
-
-    return completion.choices[0].message.content;
+    
+    if (!response.ok) throw new Error('Failed to generate AI response');
+    const data = await response.json();
+    return data.content;
 }
+
 export const saveMessage = async (
   text: string, 
   type: MessageType
