@@ -84,7 +84,8 @@ export const saveMessage = async (
         const formattedMessages: ChatMessage[] = recentMessages.map(m => ({
           text: m.text ?? '',
           chatter_user_name: m.chatter_user_name ?? 'anonymous',
-          twitch_user_id: m.users.twitch_user_id ?? 'unknown'
+          twitch_user_id: m.users.twitch_user_id ?? 'unknown',
+          created_at: m.created_at
         }));
         console.log('Formatted messages:', formattedMessages);
         // Generate and send AI response
