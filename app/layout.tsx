@@ -23,6 +23,7 @@ export default async function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang="en">
       <body className="bg-black">
+        {/* @ts-expect-error Async Server Component */}
         <Navbar />
         <main
           id="skip"
