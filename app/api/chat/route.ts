@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import { Database } from '@/types_db';
+
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -14,7 +16,7 @@ export async function POST(request: Request) {
         role: 'system', 
         content: `You are a friendly chat bot engaging with Twitch chat. 
           Based on the recent messages, generate a natural, engaging response.
-          Recent context: ${messages.map(m => 
+          Recent context: ${messages.map((m: Database['public']['Tables']['messages']['Row']) => 
             `${m.chatter_user_name}: ${m.text}`).join('\n')}`
       }],
       model: "gpt-3.5-turbo",

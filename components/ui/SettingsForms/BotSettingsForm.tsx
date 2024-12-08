@@ -5,7 +5,6 @@ import Card from '@/components/ui/Card';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Database } from '@/types_db';
 
 export default function BotSettingsForm({ botEnabled }: { botEnabled: boolean }) {
   const router = useRouter();
