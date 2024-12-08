@@ -52,7 +52,7 @@ export async function POST(request: Request) {
         },
         ...messageContext.map(msg => ({
           role: msg.role,
-          content: `${msg.username}: ${msg.content}`
+          content: `${msg.timestamp} - ${msg.username}: ${msg.content}`
         }))
       ],
       model: "gpt-3.5-turbo",
