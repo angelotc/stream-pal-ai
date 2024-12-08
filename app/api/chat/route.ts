@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { Database } from '@/types_db';
 
+type MessageRow = Database['public']['Tables']['messages']['Row'];
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -9,14 +10,14 @@ const openai = new OpenAI({
 
 export async function POST(request: Request) {
   try {
-    const { messages } = await request.json();
+    const { messages }: { messages: MessageRow[] } = await request.json();
     
     const completion = await openai.chat.completions.create({
       messages: [{ 
         role: 'system', 
         content: `You are a friendly chat bot engaging with Twitch chat. 
           Based on the recent messages, generate a natural, engaging response.
-          Recent context: ${messages.map((m: Database['public']['Tables']['messages']['Row']) => 
+          Recent context: ${messages.map((m: MessageRow) => 
             `${m.chatter_user_name}: ${m.text}`).join('\n')}`
       }],
       model: "gpt-3.5-turbo",
