@@ -1,6 +1,0 @@
-{
-  "crons": [{
-    "path": "/api/cron/chat-interaction",
-    "schedule": "*/5 * * * *"  
-  }]
-} 
