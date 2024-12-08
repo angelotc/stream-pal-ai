@@ -349,67 +349,67 @@ const insertChatMessage = async (messageData: {
  * Get all currently active streams
  */
 export async function getActiveStreamSettings() {
-    const { data: streamSettings, error } = await supabaseAdmin
-        .from('stream_settings')
-        .select(`
+  const { data: streamSettings, error } = await supabaseAdmin
+    .from('stream_settings')
+    .select(`
             *,
             users (
                 twitch_user_name,
                 twitch_user_id
             )
         `)
-        .eq('is_live', true)
-        .order('updated_at', { ascending: true });
+    .eq('is_live', true)
+    .order('updated_at', { ascending: true });
 
-    if (error) {
-        console.error('Error fetching active stream settings:', error);
-        throw error;
-    }
+  if (error) {
+    console.error('Error fetching active stream settings:', error);
+    throw error;
+  }
 
-    return streamSettings || [];
+  return streamSettings || [];
 }
 
 /**
  * Get recent chat messages for a specific broadcaster
  */
 export async function getChatHistory(
-    broadcaster_user_id: string,
-    limit: number = 10
+  broadcaster_user_id: string,
+  limit: number = 10
 ) {
-    const supabase = createClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+  const supabase = createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 
-    const { data: messages, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('broadcaster_user_id', broadcaster_user_id)
-        .order('created_at', { ascending: false })
-        .limit(limit);
+  const { data: messages, error } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('broadcaster_user_id', broadcaster_user_id)
+    .order('created_at', { ascending: false })
+    .limit(limit);
 
-    if (error) {
-        console.error('Error fetching chat history:', error);
-        throw error;
-    }
+  if (error) {
+    console.error('Error fetching chat history:', error);
+    throw error;
+  }
 
-    // Return messages in chronological order (oldest first)
-    return (messages || []).reverse();
+  // Return messages in chronological order (oldest first)
+  return (messages || []).reverse();
 }
 
 /**
  * Update the last interaction timestamp for a stream
  */
 export async function updateLastInteraction(platform_user_id: string) {
-    const { error } = await supabaseAdmin
-        .from('stream_settings')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('platform_user_id', platform_user_id);
+  const { error } = await supabaseAdmin
+    .from('stream_settings')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('platform_user_id', platform_user_id);
 
-    if (error) {
-        console.error('Error updating last interaction:', error);
-        throw error;
-    }
+  if (error) {
+    console.error('Error updating last interaction:', error);
+    throw error;
+  }
 }
 
 export {
