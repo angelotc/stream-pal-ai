@@ -9,7 +9,7 @@ import { saveMessage, getMessages } from '@/utils/messages';
 import { Database } from '@/types_db';
 import { createClient } from '@/utils/supabase/client';
 
-type MessageRow = Database['public']['Tables']['messages']['Row']
+type MessageRow = Database['public']['Tables']['messages']['Row'];
 
 interface Transcript {
   text: string;
@@ -60,16 +60,12 @@ export default function MessagesForm() {
       const twitchUserId = user?.user_metadata?.provider_id;
       console.log('Loading messages for Twitch ID:', twitchUserId);
       
-      // First try to get messages from the last 24 hours
-      const oneDayAgo = new Date();
-      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-      
       const { data, error } = await supabase
         .from('messages')
         .select('*')
         .eq('broadcaster_twitch_id', twitchUserId)
-        .gte('created_at', oneDayAgo.toISOString())
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50);
       
       console.log('Messages query result:', { data, error });
       
@@ -104,12 +100,7 @@ export default function MessagesForm() {
           (payload) => {
             console.log('New message received:', payload);
             const newMessage = payload.new as MessageRow;
-            setMessages(prev => {
-              // Avoid duplicate messages
-              const exists = prev.some(msg => msg.id === newMessage.id);
-              if (exists) return prev;
-              return [newMessage, ...prev];
-            });
+            setMessages(prev => [newMessage, ...prev]);
           }
         )
         .subscribe((status) => {
