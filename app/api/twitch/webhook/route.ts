@@ -75,7 +75,7 @@ export async function POST(request: Request) {
                                 text: data.event.message.text,
                                 broadcaster_user_id: data.event.broadcaster_user_id,
                                 chatter_user_name: data.event.chatter_user_name,
-                                twitch_user_id: data.event.chatter_user_id
+                                chatter_user_id: data.event.chatter_user_id
                             });
                             return new NextResponse(null, { status: 204 });
                         } catch (error) {

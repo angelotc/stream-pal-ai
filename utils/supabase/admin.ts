@@ -327,7 +327,7 @@ const insertChatMessage = async (messageData: {
   text: string;
   broadcaster_user_id: string;
   chatter_user_name: string;
-  twitch_user_id: string;
+  chatter_user_id: string;
 }) => {
   const { error } = await supabaseAdmin
     .from('messages')
@@ -336,7 +336,7 @@ const insertChatMessage = async (messageData: {
       type: 'twitch',
       user_id: messageData.broadcaster_user_id,
       chatter_user_name: messageData.chatter_user_name,
-      twitch_user_id: messageData.twitch_user_id,
+      chatter_user_id: messageData.chatter_user_id,
       broadcaster_twitch_id: messageData.broadcaster_user_id,
       timestamp: new Date().toISOString()
     });
