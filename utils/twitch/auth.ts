@@ -5,13 +5,24 @@ export const TWITCH_SCOPES = 'channel:read:subscriptions channel:manage:broadcas
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
 export const getToken = async ({ twitch_secret, twitch_client }: TokenRefresh) => {
-  // Check if we have a valid cached token
+  // If we're on the client side, fetch from our API route
+  if (typeof window !== 'undefined') {
+    const response = await fetch('/api/twitch/token');
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(`Failed to get token: ${data.error}`);
+    }
+    
+    return data.token;
+  }
+  
+  // Server-side token logic (existing code)
   if (cachedToken && cachedToken.expiresAt > Date.now()) {
     console.log('Using cached token');
     return cachedToken.value;
   }
 
-  // If not, get a new token
   console.log('Getting fresh token');
   const response = await fetch('https://id.twitch.tv/oauth2/token', {
     method: 'POST',

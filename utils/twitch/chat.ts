@@ -1,4 +1,4 @@
-import { getToken } from './auth';
+import { getToken } from '@/utils/twitch/auth';
 
 export async function sendTwitchMessage(broadcasterId: string, message: string) {
     try {
@@ -7,6 +7,7 @@ export async function sendTwitchMessage(broadcasterId: string, message: string) 
             twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
             twitch_client: process.env.TWITCH_CLIENT_ID!
         });
+
         console.log('accessToken', accessToken);
         const response = await fetch(`https://api.twitch.tv/helix/chat/messages`, {
             method: 'POST',
@@ -18,6 +19,7 @@ export async function sendTwitchMessage(broadcasterId: string, message: string) 
             body: JSON.stringify({
                 broadcaster_id: broadcasterId,
                 message: message,
+                sender_id: process.env.TWITCH_BOT_USER_ID!,
                 // Optional: reply to a specific message
                 // reply_parent_message_id: 'message-id'
             })
