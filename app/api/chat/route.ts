@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
-import { Database } from '@/types_db'
-type MessageRow = Database['public']['Tables']['messages']['Row']
+import { MessageRow } from '@/types/chat';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY

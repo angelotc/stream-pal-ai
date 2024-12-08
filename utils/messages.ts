@@ -1,15 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
-import { Database } from '@/types_db';
+import { MessageType, ChatMessage } from '@/types/chat';
 import { sendTwitchMessage } from './twitch/chat';
-import OpenAI from 'openai';
-
-type MessageType = Database['public']['Tables']['messages']['Row']['type'];
-type MessageRow = Database['public']['Tables']['messages']['Row'];
-type ChatMessage = {
-    text: string;
-    chatter_user_name: string;
-    user_id: string;
-};
 
 const INTERACTION_COOLDOWN = 10 * 1000; // 10 seconds
 const MESSAGE_CONTEXT_SIZE = 10;
@@ -93,7 +84,7 @@ export const saveMessage = async (
         const formattedMessages: ChatMessage[] = recentMessages.map(m => ({
           text: m.text ?? '',
           chatter_user_name: m.chatter_user_name ?? 'anonymous',
-          user_id: m.users.twitch_user_id ?? 'unknown'
+          twitch_user_id: m.users.twitch_user_id ?? 'unknown'
         }));
         console.log('Formatted messages:', formattedMessages);
         // Generate and send AI response
