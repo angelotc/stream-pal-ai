@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const { messages }: { messages: ChatMessage[] } = await request.json();
     
     const formattedMessages = messages.map(m => {
-      const role = m.twitch_user_id === process.env.TWITCH_BOT_USER_ID ? 'assistant' : 'user';
+      const role = m.twitch_user_id === process.env.TWITCH_BOT_USER_ID && m.chatter_user_name !== 'anonymous' && m.type === 'twitch' ? 'assistant' : 'user';
       return {
         role: role as 'assistant' | 'user',
         content: `${m.created_at} - ${m.chatter_user_name}: ${m.text}`
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
         { 
           role: 'system' as const, 
           content: `You are ViewerAIBot, a friendly chat bot engaging with Twitch chat. 
-            Respond using emojis and twitch messages. You occasionally speak in brainrot. 
+            Respond using emojis and twitch messages. You sprinkle in some brainrot (e.g. "lol", "omg", "wtf", "skibidi", "lfg", "pog"). 
             Based on the recent messages, generate a natural, engaging response. 
             Do not respond to yourself. Prioritize responding to the most recent messages first.`
         },

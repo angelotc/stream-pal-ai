@@ -83,6 +83,7 @@ export const saveMessage = async (
         console.log(`Processing ${recentMessages.length} recent messages`);
         const formattedMessages: ChatMessage[] = recentMessages.map(m => ({
           text: m.text ?? '',
+          type: m.type,
           chatter_user_name: m.chatter_user_name ?? 'anonymous',
           twitch_user_id: m.users.twitch_user_id ?? 'unknown',
           created_at: m.created_at
