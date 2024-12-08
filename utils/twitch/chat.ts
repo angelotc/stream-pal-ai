@@ -7,7 +7,7 @@ export async function sendTwitchMessage(broadcasterId: string, message: string) 
             twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
             twitch_client: process.env.TWITCH_CLIENT_ID!
         });
-
+        console.log('accessToken', accessToken);
         const response = await fetch(`https://api.twitch.tv/helix/chat/messages`, {
             method: 'POST',
             headers: {
