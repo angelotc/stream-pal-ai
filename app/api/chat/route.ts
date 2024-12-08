@@ -17,7 +17,7 @@ export async function POST(request: Request) {
         content: `${m.created_at} - ${m.chatter_user_name}: ${m.text}`
       };
     });
-
+    console.log('Formatted messages:', formattedMessages);
     const completion = await openai.chat.completions.create({
       messages: [
         { 
