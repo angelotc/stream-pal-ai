@@ -30,10 +30,10 @@ export async function POST(request: Request) {
         console.log('Starting periodic chat interactions...');
         const activeStreamSettings = await getActiveStreamSettings();
         console.log(`Found ${activeStreamSettings.length} active streams`);
-        
+
         for (const stream of activeStreamSettings) {
             console.log(`Processing stream for platform_user_id: ${stream.platform_user_id}`);
-            
+
             if (shouldInteract(stream.last_interaction)) {
                 console.log('Cooldown passed, fetching recent messages...');
                 const messages = await getChatHistory(stream.platform_user_id!, MESSAGE_CONTEXT_SIZE);
@@ -43,14 +43,14 @@ export async function POST(request: Request) {
                         text: m.text,
                         chatter_user_name: m.chatter_user_name!
                     }));
-                
+
                 // Generate AI response
                 const response = await generateAIResponse(formattedMessages);
 
                 // Send message using new chat utility
                 if (stream.platform_user_id && response) {
                     await sendTwitchMessage(
-                        stream.platform_user_id, 
+                        stream.platform_user_id,
                         response
                     );
                 }
