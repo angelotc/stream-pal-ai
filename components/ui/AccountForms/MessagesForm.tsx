@@ -154,20 +154,23 @@ export default function MessagesForm() {
             (now - lastTranscriptRef.current.timestamp) < TRANSCRIPTION.COMBINE_THRESHOLD) {
           thisCaption = `${lastTranscriptRef.current.text} ${thisCaption}`;
           lastTranscriptRef.current = null;
+          const { error } = await saveMessage(thisCaption, 'transcript');
+          if (error) {
+            console.error('Failed to save transcript:', error);
+          }
         } else {
+          const { error } = await saveMessage(thisCaption, 'transcript');
+          if (error) {
+            console.error('Failed to save transcript:', error);
+          }
           lastTranscriptRef.current = { text: thisCaption, timestamp: now };
         }
 
-        const { error } = await saveMessage(thisCaption, 'transcript');
-        if (error) {
-          console.error('Failed to save transcript:', error);
-        }
-        
         clearTimeout(captionTimeout.current);
         captionTimeout.current = setTimeout(() => {
           setCaption(undefined);
           clearTimeout(captionTimeout.current);
-        }, 3000);
+        }, TRANSCRIPTION.CAPTION_TIMEOUT);
       }
     };
 
