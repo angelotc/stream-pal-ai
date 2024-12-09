@@ -25,15 +25,15 @@ export async function POST(request: Request) {
       .eq('platform_user_id', broadcasterId)
       .eq('platform', 'twitch')
       .single();
-    console.log("bot prompt", JSON.stringify(streamSettings));
     const GLOBAL_CONTEXT = `Note: Each message includes metadata (username and timestamp) to help you understand message order and context, 
-      but please format your responses naturally without including timestamps.`;
+      but please format your responses naturally without including timestamps. Only respond with a 1-3 liner response. Do not add any additional formatting such
+       as timestamps aside from the response`;
 
     const botPrompt = (streamSettings?.bot_prompt || `You are ViewerAIBot, a friendly chat bot engaging with Twitch chat. 
       Respond using emojis and twitch messages. You sprinkle in some brainrot (e.g. "lol", "omg", "wtf", "skibidi", "lfg", "pog"). 
       Based on the recent messages, generate a natural, engaging response. 
       Do not respond to yourself. Prioritize responding to the most recent messages first.`) + GLOBAL_CONTEXT;
-    
+    console.log("bot prompt", botPrompt);
     const formattedMessages = messages.map(m => {
       const role = m.twitch_user_id === process.env.TWITCH_BOT_USER_ID && m.chatter_user_name !== 'anonymous' && m.type === 'twitch' ? 'assistant' : 'user';
       const prefix = m?.type === 'transcript' ? 'streamer' : m.chatter_user_name;
