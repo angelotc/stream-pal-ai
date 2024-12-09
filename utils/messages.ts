@@ -43,6 +43,7 @@ export const saveMessage = async (
       .from('messages')
       .insert({
         user_id: user.id,
+        chatter_user_id: user.user_metadata?.provider_id,
         text,
         type,
         timestamp,
