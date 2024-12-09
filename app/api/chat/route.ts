@@ -9,7 +9,13 @@ const openai = new OpenAI({
 
 export async function POST(request: Request) {
   try {
-    const { messages }: { messages: ChatMessage[] } = await request.json();
+    const { 
+      messages, 
+      priorityMessage 
+    }: { 
+      messages: ChatMessage[], 
+      priorityMessage?: ChatMessage 
+    } = await request.json();
     
     // Get the broadcaster's Twitch ID from the first message
     const broadcasterId = messages[0]?.broadcaster_twitch_id;
@@ -62,10 +68,15 @@ export async function POST(request: Request) {
     const completion = await openai.chat.completions.create({
       messages: [
         { role: 'system' as const, content: botPrompt },
+        // Add priority message context if it exists
+        ...(priorityMessage ? [{
+          role: 'system' as const,
+          content: `Respond specifically to this message: "${priorityMessage.text}"`
+        }] : []),
         ...formattedMessages.map(m => ({ 
           role: m.role as 'assistant' | 'user', 
           content: m.content 
-        })).slice(-10)
+        })).slice(-3)  // Keep recent context
       ],
       model: "gpt-4o-mini",
       max_tokens: 100,

@@ -10,6 +10,8 @@ type ChatMessage = {
     twitch_user_id: UserRow['twitch_user_id'];
     created_at: MessageRow['created_at'];
     broadcaster_twitch_id: UserRow['twitch_user_id'];
+    responded_to?: MessageRow['responded_to'];
+    id?: MessageRow['id'];
 };
 
 export type {

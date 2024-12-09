@@ -11,15 +11,46 @@ function shouldInteract(lastInteractionTime: string | null): boolean {
 }
 
 async function generateAIResponse(messages: ChatMessage[]) {
+    // Find messages that haven't been responded to yet
+    const unansweredMessages = messages.filter(m => 
+        !m.responded_to && 
+        m.type === 'transcript' && 
+        m.text.trim().length > 0
+    );
+
+    // If we have unanswered messages, prioritize the most recent one
+    const messageToRespond = unansweredMessages[0];
+    
+    if (!messageToRespond) {
+      // Use the most recent message instead
+      return generateAIResponse([messages[0]]);
+    }
+
     const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages })
+        body: JSON.stringify({ 
+            messages,
+            priorityMessage: messageToRespond 
+        })
     });
     
     if (!response.ok) throw new Error('Failed to generate AI response');
     const data = await response.json();
+
+    // Mark the message as responded to
+    await updateMessageResponseStatus(messageToRespond.id!);
+    
     return data.content;
+}
+
+// Add function to update message status
+async function updateMessageResponseStatus(messageId: string) {
+    const supabase = createClient();
+    await supabase
+        .from('messages')
+        .update({ responded_to: true })
+        .eq('id', messageId);
 }
 
 export const saveMessage = async (
@@ -35,7 +66,7 @@ export const saveMessage = async (
     const timestamp = new Date().toISOString();
     console.log('Saving message for user:', user);
 
-    // Save the message
+    // Save the message with responded_to flag
     const { error } = await supabase
       .from('messages')
       .insert({
@@ -45,7 +76,8 @@ export const saveMessage = async (
         type,
         timestamp,
         created_at: timestamp,
-        broadcaster_twitch_id: user.user_metadata?.provider_id
+        broadcaster_twitch_id: user.user_metadata?.provider_id,
+        responded_to: false  // Add this field
       });
 
     if (error) throw error;
