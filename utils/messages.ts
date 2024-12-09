@@ -11,20 +11,18 @@ function shouldInteract(lastInteractionTime: string | null): boolean {
 }
 
 async function generateAIResponse(messages: ChatMessage[]) {
-    // Find messages that haven't been responded to yet
+    console.log('Starting AI response generation with messages:', messages.length);
+    
     const unansweredMessages = messages.filter(m => 
         !m.responded_to && 
         m.type === 'transcript' && 
         m.text.trim().length > 0
     );
+    console.log('Found unanswered messages:', unansweredMessages.length);
 
     // If we have unanswered messages, prioritize the most recent one
     const messageToRespond = unansweredMessages[0];
     
-    if (!messageToRespond) {
-      // Use the most recent message instead
-      return generateAIResponse([messages[0]]);
-    }
     console.log("messageToRespond", messageToRespond);
     const response = await fetch('/api/chat', {
         method: 'POST',
@@ -38,7 +36,8 @@ async function generateAIResponse(messages: ChatMessage[]) {
     if (!response.ok) throw new Error('Failed to generate AI response');
     const data = await response.json();
 
-    // Mark the message as responded to
+    console.log('AI Response generated:', data.content);
+    console.log('Updating message response status for ID:', messageToRespond.id!);
     await updateMessageResponseStatus(messageToRespond.id!);
     
     return data.content;
@@ -46,11 +45,18 @@ async function generateAIResponse(messages: ChatMessage[]) {
 
 // Add function to update message status
 async function updateMessageResponseStatus(messageId: string) {
+    console.log('Updating message response status:', messageId);
     const supabase = createClient();
-    await supabase
+    const { error } = await supabase
         .from('messages')
         .update({ responded_to: true })
         .eq('id', messageId);
+    
+    if (error) {
+        console.error('Error updating message status:', error);
+    } else {
+        console.log('Successfully updated message status');
+    }
 }
 
 export const saveMessage = async (

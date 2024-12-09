@@ -17,6 +17,11 @@ export async function POST(request: Request) {
       priorityMessage?: ChatMessage 
     } = await request.json();
     
+    console.log('Received request:', { 
+      messageCount: messages.length,
+      hasPriorityMessage: !!priorityMessage
+    });
+    
     // Get the broadcaster's Twitch ID from the first message
     const broadcasterId = messages[0]?.broadcaster_twitch_id;
     if (!broadcasterId) {
