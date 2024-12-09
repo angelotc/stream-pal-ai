@@ -13,10 +13,10 @@ export async function POST(request: Request) {
     
     // Get the broadcaster's Twitch ID from the first message
     const broadcasterId = messages[0]?.broadcaster_twitch_id;
-    console.log("broadcasterId", broadcasterId);
     if (!broadcasterId) {
       throw new Error('Broadcaster ID not found');
     }
+
     // Get the custom bot prompt from stream_settings
     const supabase = createClient();
     const { data: streamSettings } = await supabase
@@ -25,30 +25,47 @@ export async function POST(request: Request) {
       .eq('platform_user_id', broadcasterId)
       .eq('platform', 'twitch')
       .single();
-    const GLOBAL_CONTEXT = `Note: Each message includes metadata (username and timestamp) to help you understand message order and context, 
-      but please format your responses naturally without including timestamps. Only respond with a 1-3 liner response. `;
 
-    const botPrompt = (streamSettings?.bot_prompt || `You are ViewerAIBot, a friendly chat bot engaging with Twitch chat. 
-      Respond using emojis and twitch messages. You sprinkle in some brainrot (e.g. "lol", "omg", "wtf", "skibidi", "lfg", "pog"). 
-      Based on the recent messages, generate a natural, engaging response. 
-      Do not respond to yourself. Prioritize responding to the most recent messages first.`) + GLOBAL_CONTEXT;
-    console.log("bot prompt", botPrompt);
-    const formattedMessages = messages.map(m => {
-      const role = m.twitch_user_id === process.env.TWITCH_BOT_USER_ID && m.chatter_user_name !== 'anonymous' && m.type === 'twitch' ? 'assistant' : 'user';
-      const prefix = m?.type === 'transcript' ? 'streamer' : m.chatter_user_name;
-      return {
-        role: role as 'assistant' | 'user',
-        content: `${prefix}: ${m.text}`
-      };
+    // Filter out spam/bot messages and self-responses
+    const filteredMessages = messages.filter(msg => {
+      // Remove messages containing spam keywords
+      const spamKeywords = ['cheap viewers', 'followers.online', 'followers.ru'];
+      const isSpam = spamKeywords.some(keyword => 
+        msg.text.toLowerCase().includes(keyword.toLowerCase())
+      );
+      
+      // Remove bot's own messages to prevent self-replies
+      const isBot = msg.twitch_user_id === process.env.TWITCH_BOT_USER_ID;
+      
+      return !isSpam && !isBot;
     });
-    console.log('Formatted messages:', formattedMessages);
+
+    // Format the filtered messages for the AI
+    const formattedMessages = filteredMessages.map(m => ({
+      role: m.twitch_user_id === process.env.TWITCH_BOT_USER_ID ? 'assistant' : 'user',
+      content: `${m.type === 'transcript' ? 'streamer' : m.chatter_user_name}: ${m.text}`
+    }));
+
+    // Add global context and constraints
+    const GLOBAL_CONTEXT = `
+      Respond naturally as a Twitch chat bot. Keep responses short (1-3 lines).
+      Use emojis and Twitch-style messages.
+      Do not include timestamps or formatting metadata.
+      Do not repeat your own name or prefix responses with your name.
+    `;
+
+    const botPrompt = (streamSettings?.bot_prompt || 
+      `You are a friendly Twitch chat bot. Respond using emojis and casual language. 
+       When asked questions, answer directly. Occasionally use trendy slang like "skibidi", "rizz", "goated".
+       Feel free to playfully roast chatters or the streamer sometimes.`) + GLOBAL_CONTEXT;
+
     const completion = await openai.chat.completions.create({
       messages: [
-        { 
-          role: 'system' as const, 
-          content: botPrompt
-        },
-        ...formattedMessages
+        { role: 'system' as const, content: botPrompt },
+        ...formattedMessages.map(m => ({ 
+          role: m.role as 'assistant' | 'user', 
+          content: m.content 
+        })).slice(-10)
       ],
       model: "gpt-4o-mini",
       max_tokens: 100,
@@ -57,6 +74,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ content: completion.choices[0].message.content });
   } catch (error) {
+    console.error('Chat error:', error);
     return NextResponse.json({ error: 'Failed to generate response' }, { status: 500 });
   }
 }   
