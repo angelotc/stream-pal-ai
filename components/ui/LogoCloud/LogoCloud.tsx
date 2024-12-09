@@ -4,7 +4,7 @@ export default function LogoCloud() {
       <p className="mt-24 text-xs uppercase text-zinc-400 text-center font-bold tracking-[0.3em]">
         Brought to you by
       </p>
-      <div className="grid grid-cols-1 place-items-center	my-12 space-y-4 sm:mt-8 sm:space-y-0 md:mx-auto md:max-w-2xl sm:grid sm:gap-6 sm:grid-cols-6">
+      <div className="grid grid-cols-1 place-items-center	my-12 space-y-4 sm:mt-8 sm:space-y-0 md:mx-auto md:max-w-2xl sm:grid sm:gap-6 sm:grid-cols-7">
         <div className="flex items-center justify-start h-12">
           <a href="https://nextjs.org" aria-label="Next.js Link">
             <img
@@ -56,6 +56,15 @@ export default function LogoCloud() {
               src="/openai.svg"
               alt="OpenAI.com Logo"
               className="h-12 text-white"
+            />
+          </a>
+        </div>
+        <div className="flex items-center justify-start h-12">
+          <a href="https://twitch.tv" aria-label="Twitch.tv Link">
+            <img
+              src="/twitch.svg"
+              alt="Twitch.tv Logo"
+              className="h-8 text-white"
             />
           </a>
         </div>
