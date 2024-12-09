@@ -119,8 +119,7 @@ export default function MessagesForm() {
         smart_format: DEEPGRAM.OPTIONS.smart_format,
         filler_words: DEEPGRAM.OPTIONS.filler_words,
         utterance_end_ms: DEEPGRAM.OPTIONS.UTTERANCE_END_MS,
-        vad_events: DEEPGRAM.OPTIONS.vad_events,
-        endpointing: DEEPGRAM.OPTIONS.endpointing
+        vad_events: DEEPGRAM.OPTIONS.vad_events
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

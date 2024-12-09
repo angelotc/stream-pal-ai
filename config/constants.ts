@@ -11,8 +11,7 @@ export const DEEPGRAM = {
     interim_results: true,
     smart_format: true,
     filler_words: true,
-    vad_events: false,
-    endpointing: 500
+    vad_events: false
   }
 } as const;
 
