@@ -17,6 +17,6 @@ export const DEEPGRAM = {
 
 export const CHAT = {
   INTERACTION_COOLDOWN: 10 * 1000, // 10 seconds
-  MESSAGE_CONTEXT_SIZE: 4,
+  MESSAGE_CONTEXT_SIZE: 10,
   RESPONSE_DELAY: 2000 // 2 seconds delay before responding
 } as const;

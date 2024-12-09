@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       role: m.twitch_user_id === process.env.TWITCH_BOT_USER_ID ? 'assistant' : 'user',
       content: `${m.type === 'transcript' ? 'streamer' : m.chatter_user_name}: ${m.text}`
     }));
-
+    console.log("formattedMessages", formattedMessages);
     // Add global context and constraints
     const GLOBAL_CONTEXT = `
       Respond naturally as a Twitch chat bot. Keep responses short (1-3 lines).
