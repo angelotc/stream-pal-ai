@@ -134,7 +134,6 @@ export default function MessagesForm() {
       }
     };
 
-    const BUFFER_TIME = 5000; // Increased to 5 seconds
     const SAVE_DELAY = 2000; // 2 second delay before saving
     let transcriptBuffer = '';
     let lastTranscriptTime = 0;
