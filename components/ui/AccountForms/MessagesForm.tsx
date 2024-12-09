@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { useDeepgram, LiveConnectionState, LiveTranscriptionEvents, LiveTranscriptionEvent } from '@/context/DeepgramContextProvider';
@@ -8,7 +8,8 @@ import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/Micr
 import { saveMessage, getMessages } from '@/utils/messages';
 import { Database } from '@/types_db';
 import { createClient } from '@/utils/supabase/client';
-import { TRANSCRIPTION, DEEPGRAM } from '@/config/constants';
+import {  DEEPGRAM } from '@/config/constants';
+import React from 'react';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -17,7 +18,7 @@ interface Transcript {
   timestamp: string;
 }
 
-const MessageTime = ({ timestamp }: { timestamp: string | null }) => (
+const MessageTime = React.memo(({ timestamp }: { timestamp: string | null }) => (
   <span className="text-sm text-gray-500 min-w-[45px]">
     {timestamp ? new Date(timestamp).toLocaleTimeString([], {
       hour: '2-digit',
@@ -25,7 +26,7 @@ const MessageTime = ({ timestamp }: { timestamp: string | null }) => (
       hour12: false
     }) : ''}
   </span>
-);
+));
 
 const MessageAuthor = ({ type, username }: { type: string, username: string | null }) => (
   <span className={`font-medium ${type === 'transcript' ? 'text-blue-500' : 'text-purple-500'}`}>
@@ -51,32 +52,31 @@ export default function MessagesForm() {
   const captionTimeout = useRef<NodeJS.Timeout>();
   const keepAliveInterval = useRef<NodeJS.Timeout>();
   const lastTranscriptRef = useRef<{ text: string; timestamp: number } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   // Initialize Supabase client
   const supabase = createClient();
+  const subscriptionRef = useRef<(() => void) | null>(null);
 
   // Load initial messages
   useEffect(() => {
     const loadMessages = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const twitchUserId = user?.user_metadata?.provider_id;
-      console.log('Loading messages for Twitch ID:', twitchUserId);
-      
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('broadcaster_twitch_id', twitchUserId)
-        .order('created_at', { ascending: false })
-        .limit(50);
-      
-      console.log('Messages query result:', { data, error });
-      
-      if (error) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const twitchUserId = user?.user_metadata?.provider_id;
+        
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('broadcaster_twitch_id', twitchUserId)
+          .order('created_at', { ascending: false })
+          .limit(50);
+        
+        if (error) throw error;
+        if (data) setMessages(data);
+      } catch (error) {
         console.error('Error loading messages:', error);
-        return;
-      }
-      
-      if (data) {
-        setMessages(data);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -105,10 +105,15 @@ export default function MessagesForm() {
         )
         .subscribe();
 
-      return () => supabase.removeChannel(channel);
+      subscriptionRef.current = () => supabase.removeChannel(channel);
     };
 
     setupSubscription();
+    return () => {
+      if (subscriptionRef.current) {
+        subscriptionRef.current();
+      }
+    };
   }, [supabase]);
 
   useEffect(() => {
@@ -198,25 +203,6 @@ export default function MessagesForm() {
   }, [microphoneState, connectionState]);
 
 
-  // Keep connection alive
-  useEffect(() => {
-    if (!connection) return;
-
-    if (microphoneState !== MicrophoneState.Open && connectionState === LiveConnectionState.OPEN) {
-      connection.keepAlive();
-      keepAliveInterval.current = setInterval(() => {
-        connection.keepAlive();
-      }, 10000);
-    } else {
-      clearInterval(keepAliveInterval.current);
-    }
-
-    return () => {
-      clearInterval(keepAliveInterval.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [microphoneState, connectionState]);
-
   const handleTranscription = () => {
     if (microphoneState === MicrophoneState.Open || microphoneState === MicrophoneState.Opening) {
       stopMicrophone();
@@ -224,6 +210,13 @@ export default function MessagesForm() {
       startMicrophone();
     }
   };
+
+  const sortedMessages = useMemo(() => 
+    messages.sort((a, b) => 
+      new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+    ), 
+    [messages]
+  );
 
   return (
     <Card
@@ -259,11 +252,9 @@ export default function MessagesForm() {
         
         {(messages.length > 0) && (
           <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto bg-gray-50">
-            {messages
-              .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
-              .map((item) => (
-                <Message key={item.id} message={item} />
-              ))}
+            {sortedMessages.map((item) => (
+              <Message key={item.id} message={item} />
+            ))}
           </div>
         )}
       </div>
