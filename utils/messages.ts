@@ -47,6 +47,7 @@ async function generateAIResponse(messages: ChatMessage[]) {
 // Add function to update message status
 async function updateMessageResponseStatus(messageId: string) {
     const supabase = createClient();
+    console.log("messageId", messageId);
     await supabase
         .from('messages')
         .update({ responded_to: true })
