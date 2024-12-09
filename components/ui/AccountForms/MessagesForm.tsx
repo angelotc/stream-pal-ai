@@ -8,6 +8,7 @@ import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/Micr
 import { saveMessage, getMessages } from '@/utils/messages';
 import { Database } from '@/types_db';
 import { createClient } from '@/utils/supabase/client';
+import { TRANSCRIPTION, DEEPGRAM } from '@/config/constants';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -50,8 +51,6 @@ export default function MessagesForm() {
   const captionTimeout = useRef<NodeJS.Timeout>();
   const keepAliveInterval = useRef<NodeJS.Timeout>();
   const lastTranscriptRef = useRef<{ text: string; timestamp: number } | null>(null);
-  const COMBINE_THRESHOLD = 2000; // 2 seconds in milliseconds
-
   // Initialize Supabase client
   const supabase = createClient();
 
@@ -120,11 +119,11 @@ export default function MessagesForm() {
   useEffect(() => {
     if (microphoneState === MicrophoneState.Ready) {
       connectToDeepgram({
-        model: "nova-2",
-        interim_results: true,
-        smart_format: true,
-        filler_words: true,
-        utterance_end_ms: 3000,
+        model: DEEPGRAM.MODEL,
+        interim_results: DEEPGRAM.OPTIONS.interim_results,
+        smart_format: DEEPGRAM.OPTIONS.smart_format,
+        filler_words: DEEPGRAM.OPTIONS.filler_words,
+        utterance_end_ms: DEEPGRAM.UTTERANCE_END_MS,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -152,7 +151,7 @@ export default function MessagesForm() {
         
         // Check if we should combine with previous transcript
         if (lastTranscriptRef.current && 
-            (now - lastTranscriptRef.current.timestamp) < COMBINE_THRESHOLD) {
+            (now - lastTranscriptRef.current.timestamp) < TRANSCRIPTION.COMBINE_THRESHOLD) {
           thisCaption = `${lastTranscriptRef.current.text} ${thisCaption}`;
           lastTranscriptRef.current = null;
         } else {
