@@ -48,7 +48,7 @@ export async function POST(request: Request) {
         },
         ...formattedMessages
       ],
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o-mini",
       max_tokens: 100,
       temperature: 0.7
     });
