@@ -49,6 +49,8 @@ export default function MessagesForm() {
   const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
   const captionTimeout = useRef<NodeJS.Timeout>();
   const keepAliveInterval = useRef<NodeJS.Timeout>();
+  const lastTranscriptRef = useRef<{ text: string; timestamp: number } | null>(null);
+  const COMBINE_THRESHOLD = 2000; // 2 seconds in milliseconds
 
   // Initialize Supabase client
   const supabase = createClient();
@@ -146,6 +148,17 @@ export default function MessagesForm() {
       }
 
       if (isFinal && speechFinal && thisCaption.trim() !== "") {
+        const now = Date.now();
+        
+        // Check if we should combine with previous transcript
+        if (lastTranscriptRef.current && 
+            (now - lastTranscriptRef.current.timestamp) < COMBINE_THRESHOLD) {
+          thisCaption = `${lastTranscriptRef.current.text} ${thisCaption}`;
+          lastTranscriptRef.current = null;
+        } else {
+          lastTranscriptRef.current = { text: thisCaption, timestamp: now };
+        }
+
         const { error } = await saveMessage(thisCaption, 'transcript');
         if (error) {
           console.error('Failed to save transcript:', error);
