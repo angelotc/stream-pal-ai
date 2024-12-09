@@ -26,8 +26,7 @@ export async function POST(request: Request) {
       .eq('platform', 'twitch')
       .single();
     const GLOBAL_CONTEXT = `Note: Each message includes metadata (username and timestamp) to help you understand message order and context, 
-      but please format your responses naturally without including timestamps. Only respond with a 1-3 liner response. Do not add any additional formatting such
-       as timestamps aside from the response`;
+      but please format your responses naturally without including timestamps. Only respond with a 1-3 liner response. `;
 
     const botPrompt = (streamSettings?.bot_prompt || `You are ViewerAIBot, a friendly chat bot engaging with Twitch chat. 
       Respond using emojis and twitch messages. You sprinkle in some brainrot (e.g. "lol", "omg", "wtf", "skibidi", "lfg", "pog"). 

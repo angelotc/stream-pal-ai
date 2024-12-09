@@ -140,46 +140,47 @@ export default function MessagesForm() {
       }
     };
 
-    const onTranscript = async (data: LiveTranscriptionEvent) => {
-      const { is_final: isFinal, speech_final: speechFinal } = data;
-      let thisCaption = data.channel.alternatives[0].transcript;
-
-      if (thisCaption !== "") {
-        setCaption(thisCaption);
-      }
-
-      if (isFinal && speechFinal && thisCaption.trim() !== "") {
-        const now = Date.now();
-        
-        // Check if we should combine with previous transcript
-        if (lastTranscriptRef.current && 
-            (now - lastTranscriptRef.current.timestamp) < TRANSCRIPTION.COMBINE_THRESHOLD) {
-          thisCaption = `${lastTranscriptRef.current.text} ${thisCaption}`;
-          lastTranscriptRef.current = null;
-          const { error } = await saveMessage(thisCaption, 'transcript');
-          if (error) {
-            console.error('Failed to save transcript:', error);
-          }
-        } else {
-          const { error } = await saveMessage(thisCaption, 'transcript');
-          if (error) {
-            console.error('Failed to save transcript:', error);
-          }
-          lastTranscriptRef.current = { text: thisCaption, timestamp: now };
+    useEffect(() => {
+      if (!microphone || !connection) return;
+  
+      const onData = (e: BlobEvent) => {
+        if (e.data.size > 0 && connection.getReadyState() === 1) {
+          connection?.send(e.data);
         }
-
-        clearTimeout(captionTimeout.current);
-        captionTimeout.current = setTimeout(() => {
-          setCaption(undefined);
+      };
+  
+      const onTranscript = async (data: LiveTranscriptionEvent) => {
+        const { is_final: isFinal, speech_final: speechFinal } = data;
+        let thisCaption = data.channel.alternatives[0].transcript;
+  
+        if (thisCaption !== "") {
+          setCaption(thisCaption);
+        }
+  
+        if (isFinal && speechFinal && thisCaption.trim() !== "") {
+          const { error } = await saveMessage(thisCaption, 'transcript');
+          if (error) {
+            console.error('Failed to save transcript:', error);
+          }
+          
           clearTimeout(captionTimeout.current);
-        }, TRANSCRIPTION.CAPTION_TIMEOUT);
+          captionTimeout.current = setTimeout(() => {
+            setCaption(undefined);
+            clearTimeout(captionTimeout.current);
+          }, 3000);
+        }
+      };
+  
+      if (connectionState === LiveConnectionState.OPEN) {
+        connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
+        microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
       }
-    };
+  
 
     if (connectionState === LiveConnectionState.OPEN) {
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
-    }
+    };
 
     return () => {
       if (connection) {
