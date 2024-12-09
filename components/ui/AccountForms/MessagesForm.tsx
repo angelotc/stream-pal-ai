@@ -142,6 +142,7 @@ export default function MessagesForm() {
 
     const onTranscript = async (data: LiveTranscriptionEvent) => {
       const { is_final: isFinal, speech_final: speechFinal } = data;
+      console.log('onTranscript data:', data);
       let thisCaption = data.channel.alternatives[0].transcript;
 
       if (thisCaption !== "") {
