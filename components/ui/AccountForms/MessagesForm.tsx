@@ -12,11 +12,6 @@ import {  DEEPGRAM } from '@/config/constants';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
-interface Transcript {
-  text: string;
-  timestamp: string;
-}
-
 const MessageTime = ({ timestamp }: { timestamp: string | null }) => (
   <span className="text-sm text-gray-500 min-w-[45px]">
     {timestamp ? new Date(timestamp).toLocaleTimeString([], {
@@ -142,9 +137,10 @@ export default function MessagesForm() {
 
     const onTranscript = async (data: LiveTranscriptionEvent) => {
       const { is_final: isFinal, speech_final: speechFinal } = data;
-      console.log('onTranscript data:', data);
       let thisCaption = data.channel.alternatives[0].transcript;
-
+      console.log('thisCaption', thisCaption,);
+      console.log('isFinal', isFinal);
+      console.log('speechFinal', speechFinal);
       if (thisCaption !== "") {
         setCaption(thisCaption);
       }
