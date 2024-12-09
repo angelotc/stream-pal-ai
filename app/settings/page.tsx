@@ -1,20 +1,19 @@
-import CustomerPortalForm from '@/components/ui/AccountForms/CustomerPortalForm';
-import EmailForm from '@/components/ui/AccountForms/EmailForm';
-import NameForm from '@/components/ui/AccountForms/NameForm';
+import BotSettingsForm from '@/components/ui/SettingsForms/BotSettingsForm';
+import BotPromptForm from '@/components/ui/SettingsForms/BotPromptForm';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import {
   getUserDetails,
-  getSubscription,
-  getUser
+  getUser,
+  getBotPrompt
 } from '@/utils/supabase/queries';
 
-export default async function Account() {
+export default async function Settings() {
   const supabase = createClient();
-  const [user, userDetails, subscription] = await Promise.all([
+  const [user, userDetails, botPrompt] = await Promise.all([
     getUser(supabase),
     getUserDetails(supabase),
-    getSubscription(supabase)
+    getBotPrompt(supabase)
   ]);
 
   if (!user) {
@@ -26,17 +25,16 @@ export default async function Account() {
       <div className="max-w-6xl px-4 py-8 mx-auto sm:px-6 sm:pt-24 lg:px-8">
         <div className="sm:align-center sm:flex sm:flex-col">
           <h1 className="text-4xl font-extrabold text-white sm:text-center sm:text-6xl">
-            Account
+            Bot Settings
           </h1>
           <p className="max-w-2xl m-auto mt-5 text-xl text-zinc-200 sm:text-center sm:text-2xl">
-            We partnered with Stripe for a simplified billing.
+            Configure your chat bot's behavior and responses.
           </p>
         </div>
       </div>
       <div className="p-4">
-        <CustomerPortalForm subscription={subscription} />
-        <NameForm userName={userDetails?.full_name ?? ''} />
-        <EmailForm userEmail={user.email} />
+        <BotSettingsForm botEnabled={userDetails?.bot_enabled ?? false} />
+        <BotPromptForm botPrompt={botPrompt?.bot_prompt ?? ''} />
       </div>
     </section>
   );

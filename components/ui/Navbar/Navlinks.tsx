@@ -22,7 +22,7 @@ export default function Navlinks({ user }: NavlinksProps) {
           <Logo />
         </Link>
         <nav className="ml-6 space-x-2 lg:block">
-        {user && (
+          {user && (
             <Link href="/home" className={s.link}>
               Home
             </Link>
@@ -31,11 +31,15 @@ export default function Navlinks({ user }: NavlinksProps) {
             Pricing
           </Link>
           {user && (
-            <Link href="/account" className={s.link}>
-              Account
-            </Link>
+            <>
+              <Link href="/settings" className={s.link}>
+                Settings
+              </Link>
+              <Link href="/account" className={s.link}>
+                Account
+              </Link>
+            </>
           )}
-          
         </nav>
       </div>
       <div className="flex justify-end space-x-8">
