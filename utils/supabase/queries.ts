@@ -59,20 +59,14 @@ export const getUserDetails = async (supabase: SupabaseClient) => {
 };
 
 export const getBotPrompt = async (supabase: SupabaseClient) => {
-  return unstable_cache(
-    async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-      
-      const { data: streamSettings } = await supabase
-        .from('stream_settings')
-        .select('bot_prompt')
-        .eq('user_id', user.id)
-        .eq('platform', 'twitch')
-        .single();
-      return streamSettings;
-    },
-    ['bot-prompt'],
-    { revalidate: 1, tags: ['bot-prompt'] }
-  )();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  
+  const { data: streamSettings } = await supabase
+    .from('stream_settings')
+    .select('bot_prompt')
+    .eq('user_id', user.id)
+    .eq('platform', 'twitch')
+    .single();
+  return streamSettings;
 };
