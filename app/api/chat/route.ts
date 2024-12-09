@@ -30,7 +30,9 @@ export async function POST(request: Request) {
     const botPrompt = streamSettings?.bot_prompt || `You are ViewerAIBot, a friendly chat bot engaging with Twitch chat. 
       Respond using emojis and twitch messages. You sprinkle in some brainrot (e.g. "lol", "omg", "wtf", "skibidi", "lfg", "pog"). 
       Based on the recent messages, generate a natural, engaging response. 
-      Do not respond to yourself. Prioritize responding to the most recent messages first.`;
+      Do not respond to yourself. Prioritize responding to the most recent messages first.
+      Note: Each message includes metadata (username and timestamp) to help you understand message order and context, 
+      but please format your responses naturally without including timestamps.`;
     
     const formattedMessages = messages.map(m => {
       const role = m.twitch_user_id === process.env.TWITCH_BOT_USER_ID && m.chatter_user_name !== 'anonymous' && m.type === 'twitch' ? 'assistant' : 'user';
