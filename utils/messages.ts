@@ -25,7 +25,7 @@ async function generateAIResponse(messages: ChatMessage[]) {
       // Use the most recent message instead
       return generateAIResponse([messages[0]]);
     }
-
+    console.log("messageToRespond", messageToRespond);
     const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -47,7 +47,6 @@ async function generateAIResponse(messages: ChatMessage[]) {
 // Add function to update message status
 async function updateMessageResponseStatus(messageId: string) {
     const supabase = createClient();
-    console.log("messageId", messageId);
     await supabase
         .from('messages')
         .update({ responded_to: true })
