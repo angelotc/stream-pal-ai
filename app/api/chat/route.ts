@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       const role = m.twitch_user_id === process.env.TWITCH_BOT_USER_ID && m.chatter_user_name !== 'anonymous' && m.type === 'twitch' ? 'assistant' : 'user';
       return {
         role: role as 'assistant' | 'user',
-        content: `${m.created_at} - ${m.chatter_user_name}: ${m.text}`
+        content: `${m.chatter_user_name}: ${m.text}`
       };
     });
     console.log('Formatted messages:', formattedMessages);

@@ -33,14 +33,14 @@ export const saveMessage = async (
     if (userError || !user) throw new Error('User not authenticated');
 
     const timestamp = new Date().toISOString();
-    console.log('Saving message for user:', user.user_metadata?.provider_id);
+    console.log('Saving message for user:', user);
 
     // Save the message
     const { error } = await supabase
       .from('messages')
       .insert({
         user_id: user.id,
-        chatter_user_id: user.user_metadata?.provider_id,
+        chatter_user_id: user.user_metadata?.name,
         text,
         type,
         timestamp,
