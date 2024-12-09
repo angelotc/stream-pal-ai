@@ -8,7 +8,7 @@ import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/Micr
 import { saveMessage, getMessages } from '@/utils/messages';
 import { Database } from '@/types_db';
 import { createClient } from '@/utils/supabase/client';
-import {  DEEPGRAM, TRANSCRIPTION } from '@/config/constants';
+import { DEEPGRAM, TRANSCRIPTION } from '@/config/constants';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -55,21 +55,21 @@ export default function MessagesForm() {
       const { data: { user } } = await supabase.auth.getUser();
       const twitchUserId = user?.user_metadata?.provider_id;
       console.log('Loading messages for Twitch ID:', twitchUserId);
-      
+
       const { data, error } = await supabase
         .from('messages')
         .select('*')
         .eq('broadcaster_twitch_id', twitchUserId)
         .order('created_at', { ascending: false })
         .limit(50);
-      
+
       console.log('Messages query result:', { data, error });
-      
+
       if (error) {
         console.error('Error loading messages:', error);
         return;
       }
-      
+
       if (data) {
         setMessages(data);
       }
@@ -83,16 +83,16 @@ export default function MessagesForm() {
     const setupSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       const twitchUserId = user?.user_metadata?.provider_id;
-      
+
       const channel = supabase
         .channel('messages')
-        .on('postgres_changes', 
-          { 
-            event: 'INSERT', 
-            schema: 'public', 
+        .on('postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
             table: 'messages',
-            filter: `broadcaster_twitch_id=eq.${twitchUserId}` 
-          }, 
+            filter: `broadcaster_twitch_id=eq.${twitchUserId}`
+          },
           (payload) => {
             const newMessage = payload.new as MessageRow;
             setMessages(prev => [newMessage, ...prev]);
@@ -134,62 +134,54 @@ export default function MessagesForm() {
       }
     };
 
+
+    const BUFFER_TIME = 3000; // 3 seconds
+    let transcriptBuffer = '';
+    let lastTranscriptTime = 0;
+
     const onTranscript = async (data: LiveTranscriptionEvent) => {
-      
       const { is_final: isFinal, speech_final: speechFinal } = data;
       let thisCaption = data.channel.alternatives[0].transcript.trim();
-      console.log("thisCaption", thisCaption);
-      console.log("isFinal", isFinal);
-      console.log("speechFinal", speechFinal);
-      
+
       // Skip empty captions
       if (!thisCaption) return;
-      
+
       // Update UI with interim results for real-time feedback
       if (!isFinal) {
         setCaption(thisCaption);
         return;
       }
-
       // Handle final transcripts
-      if (isFinal && speechFinal) {
-        // Don't process if this is an empty final caption
-        if (!thisCaption) return;
-
-        // Don't save if it's too similar to the last saved transcript
+      if (isFinal) {
         const now = Date.now();
-        if (
-          lastTranscriptRef.current && 
-          now - lastTranscriptRef.current.timestamp < 2000 && // 2 second window
-          (
-            lastTranscriptRef.current.text === thisCaption ||
-            lastTranscriptRef.current.text.includes(thisCaption) ||
-            thisCaption.includes(lastTranscriptRef.current.text)
-          )
-        ) {
-          return;
+
+        // If it's been less than BUFFER_TIME since the last transcript, append to buffer
+        if (now - lastTranscriptTime < BUFFER_TIME) {
+          transcriptBuffer += ' ' + thisCaption;
+        } else {
+          // If buffer is not empty, save it first
+          if (transcriptBuffer) {
+            await saveMessage(transcriptBuffer, 'transcript');
+            transcriptBuffer = '';
+          }
+          transcriptBuffer = thisCaption;
         }
 
-        // Save the transcript
-        const { error } = await saveMessage(thisCaption, 'transcript');
-        if (error) {
-          console.error('Failed to save transcript:', error);
-        }
+        lastTranscriptTime = now;
 
-        // Update last transcript reference
-        lastTranscriptRef.current = {
-          text: thisCaption,
-          timestamp: now
-        };
+        // If speech_final is true, save the buffer immediately
+        if (speechFinal) {
+          await saveMessage(transcriptBuffer, 'transcript');
+          transcriptBuffer = '';
+        }
 
         // Clear caption after delay
         clearTimeout(captionTimeout.current);
         captionTimeout.current = setTimeout(() => {
           setCaption(undefined);
-        }, TRANSCRIPTION.CAPTION_TIMEOUT);
+        }, DEEPGRAM.OPTIONS.CAPTION_TIMEOUT);
       }
     };
-
     if (connectionState === LiveConnectionState.OPEN) {
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
@@ -266,7 +258,7 @@ export default function MessagesForm() {
             </span>
           )}
         </div>
-        
+
         {(messages.length > 0) && (
           <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto bg-gray-50">
             {messages
