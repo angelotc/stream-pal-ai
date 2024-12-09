@@ -135,8 +135,12 @@ export default function MessagesForm() {
     };
 
     const onTranscript = async (data: LiveTranscriptionEvent) => {
+      
       const { is_final: isFinal, speech_final: speechFinal } = data;
       let thisCaption = data.channel.alternatives[0].transcript.trim();
+      console.log("thisCaption", thisCaption);
+      console.log("isFinal", isFinal);
+      console.log("speechFinal", speechFinal);
       
       // Skip empty captions
       if (!thisCaption) return;
