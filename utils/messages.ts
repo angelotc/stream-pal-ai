@@ -1,16 +1,13 @@
 import { createClient } from '@/utils/supabase/client';
 import { MessageType, ChatMessage } from '@/types/chat';
 import { sendTwitchMessage } from './twitch/chat';
-
-const INTERACTION_COOLDOWN = 10 * 1000; // 10 seconds
-const MESSAGE_CONTEXT_SIZE = 10;
-const RESPONSE_DELAY = 2000; // 2 seconds delay before responding
+import { CHAT } from '@/config/constants';
 
 function shouldInteract(lastInteractionTime: string | null): boolean {
     if (!lastInteractionTime) return true;
     const now = Date.now();
     const lastInteraction = new Date(lastInteractionTime).getTime();
-    return (now - lastInteraction) >= INTERACTION_COOLDOWN;
+    return (now - lastInteraction) >= CHAT.INTERACTION_COOLDOWN;
 }
 
 async function generateAIResponse(messages: ChatMessage[]) {
@@ -55,8 +52,8 @@ export const saveMessage = async (
     console.log('Message saved successfully');
 
     // Add delay before processing AI response
-    console.log(`Waiting ${RESPONSE_DELAY}ms before processing AI response...`);
-    await new Promise(resolve => setTimeout(resolve, RESPONSE_DELAY));
+    console.log(`Waiting ${CHAT.RESPONSE_DELAY}ms before processing AI response...`);
+    await new Promise(resolve => setTimeout(resolve, CHAT.RESPONSE_DELAY));
 
     // Get stream settings
     console.log('Checking stream settings...');
@@ -78,7 +75,7 @@ export const saveMessage = async (
         `)
         .eq('broadcaster_twitch_id', user.user_metadata?.provider_id)
         .order('created_at', { ascending: false })
-        .limit(MESSAGE_CONTEXT_SIZE);
+        .limit(CHAT.MESSAGE_CONTEXT_SIZE);
 
       if (recentMessages) {
         console.log(`Processing ${recentMessages.length} recent messages`);
@@ -87,7 +84,8 @@ export const saveMessage = async (
           type: m.type,
           chatter_user_name: m.chatter_user_name ?? 'anonymous',
           twitch_user_id: m.users.twitch_user_id ?? 'unknown',
-          created_at: m.created_at
+          created_at: m.created_at,
+          broadcaster_twitch_id: m.broadcaster_twitch_id
         }));
         console.log('Formatted messages:', formattedMessages);
         // Generate and send AI response

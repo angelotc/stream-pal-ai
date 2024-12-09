@@ -6,7 +6,6 @@ export const TRANSCRIPTION = {
 
 export const DEEPGRAM = {
   OPTIONS: {
-    
     MODEL: "nova-2",
     UTTERANCE_END_MS: 3000,
     interim_results: true,
@@ -14,6 +13,11 @@ export const DEEPGRAM = {
     filler_words: true,
     vad_events: true,
     endpointing: 500
-    
   }
-} as const; 
+} as const;
+
+export const CHAT = {
+  INTERACTION_COOLDOWN: 10 * 1000, // 10 seconds
+  MESSAGE_CONTEXT_SIZE: 10,
+  RESPONSE_DELAY: 2000 // 2 seconds delay before responding
+} as const;
