@@ -119,11 +119,13 @@ export default function MessagesForm() {
   useEffect(() => {
     if (microphoneState === MicrophoneState.Ready) {
       connectToDeepgram({
-        model: DEEPGRAM.MODEL,
+        model: DEEPGRAM.OPTIONS.MODEL,
         interim_results: DEEPGRAM.OPTIONS.interim_results,
         smart_format: DEEPGRAM.OPTIONS.smart_format,
         filler_words: DEEPGRAM.OPTIONS.filler_words,
-        utterance_end_ms: DEEPGRAM.UTTERANCE_END_MS,
+        utterance_end_ms: DEEPGRAM.OPTIONS.UTTERANCE_END_MS,
+        vad_events: DEEPGRAM.OPTIONS.vad_events,
+        endpointing: DEEPGRAM.OPTIONS.endpointing
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

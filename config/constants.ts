@@ -5,11 +5,15 @@ export const TRANSCRIPTION = {
 } as const;
 
 export const DEEPGRAM = {
-  MODEL: "nova-2",
-  UTTERANCE_END_MS: 3000,
   OPTIONS: {
+    
+    MODEL: "nova-2",
+    UTTERANCE_END_MS: 3000,
     interim_results: true,
     smart_format: true,
     filler_words: true,
+    vad_events: true,
+    endpointing: 500
+    
   }
 } as const; 
