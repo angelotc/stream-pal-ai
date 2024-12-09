@@ -6,7 +6,8 @@ export const TRANSCRIPTION = {
 export const DEEPGRAM = {
   OPTIONS: {
     MODEL: "nova-2",
-    UTTERANCE_END_MS: 3000,
+    CAPTION_TIMEOUT: 3000,
+    UTTERANCE_END_MS: 2000,
     interim_results: true,
     smart_format: true,
     filler_words: true,

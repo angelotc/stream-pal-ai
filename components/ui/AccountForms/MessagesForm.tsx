@@ -8,7 +8,7 @@ import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/Micr
 import { saveMessage, getMessages } from '@/utils/messages';
 import { Database } from '@/types_db';
 import { createClient } from '@/utils/supabase/client';
-import {  DEEPGRAM } from '@/config/constants';
+import {  DEEPGRAM, TRANSCRIPTION } from '@/config/constants';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -137,25 +137,53 @@ export default function MessagesForm() {
 
     const onTranscript = async (data: LiveTranscriptionEvent) => {
       const { is_final: isFinal, speech_final: speechFinal } = data;
-      let thisCaption = data.channel.alternatives[0].transcript;
-      console.log('thisCaption', thisCaption,);
-      console.log('isFinal', isFinal);
-      console.log('speechFinal', speechFinal);
-      if (thisCaption !== "") {
+      let thisCaption = data.channel.alternatives[0].transcript.trim();
+      
+      // Skip empty captions
+      if (!thisCaption) return;
+      
+      // Update UI with interim results for real-time feedback
+      if (!isFinal) {
         setCaption(thisCaption);
+        return;
       }
 
-      if (isFinal && speechFinal && thisCaption.trim() !== "") {
+      // Handle final transcripts
+      if (isFinal && speechFinal) {
+        // Don't process if this is an empty final caption
+        if (!thisCaption) return;
+
+        // Don't save if it's too similar to the last saved transcript
+        const now = Date.now();
+        if (
+          lastTranscriptRef.current && 
+          now - lastTranscriptRef.current.timestamp < 2000 && // 2 second window
+          (
+            lastTranscriptRef.current.text === thisCaption ||
+            lastTranscriptRef.current.text.includes(thisCaption) ||
+            thisCaption.includes(lastTranscriptRef.current.text)
+          )
+        ) {
+          return;
+        }
+
+        // Save the transcript
         const { error } = await saveMessage(thisCaption, 'transcript');
         if (error) {
           console.error('Failed to save transcript:', error);
         }
-        
+
+        // Update last transcript reference
+        lastTranscriptRef.current = {
+          text: thisCaption,
+          timestamp: now
+        };
+
+        // Clear caption after delay
         clearTimeout(captionTimeout.current);
         captionTimeout.current = setTimeout(() => {
           setCaption(undefined);
-          clearTimeout(captionTimeout.current);
-        }, 3000);
+        }, TRANSCRIPTION.CAPTION_TIMEOUT);
       }
     };
 
