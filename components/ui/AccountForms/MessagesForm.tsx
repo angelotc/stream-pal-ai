@@ -194,10 +194,25 @@ export default function MessagesForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [microphoneState, connectionState]);
 
-  const handleTranscription = () => {
-    if (microphoneState === MicrophoneState.Open || microphoneState === MicrophoneState.Opening) {
+  const handleTranscription = async () => {
+    // Check live status when they hit record
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('is_live')
+      .eq('id', user.id)
+      .single();
+    
+    if (error || !data?.is_live) {
+      alert('You must be live to start recording');
+      return;
+    }
+
+    if (microphoneState === MicrophoneState.Open) {
       stopMicrophone();
-    } else if (microphoneState === MicrophoneState.Ready || microphoneState === MicrophoneState.Paused) {
+    } else if (microphoneState === MicrophoneState.Ready) {
       startMicrophone();
     }
   };
