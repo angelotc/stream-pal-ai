@@ -1,5 +1,4 @@
 export const TRANSCRIPTION = {
-  COMBINE_THRESHOLD: 2000, // 2 seconds in milliseconds
   CAPTION_TIMEOUT: 3000,   // 3 seconds
   KEEP_ALIVE_INTERVAL: 10000 // 10 seconds
 } as const;

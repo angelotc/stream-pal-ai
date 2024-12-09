@@ -140,47 +140,32 @@ export default function MessagesForm() {
       }
     };
 
-    useEffect(() => {
-      if (!microphone || !connection) return;
-  
-      const onData = (e: BlobEvent) => {
-        if (e.data.size > 0 && connection.getReadyState() === 1) {
-          connection?.send(e.data);
-        }
-      };
-  
-      const onTranscript = async (data: LiveTranscriptionEvent) => {
-        const { is_final: isFinal, speech_final: speechFinal } = data;
-        let thisCaption = data.channel.alternatives[0].transcript;
-  
-        if (thisCaption !== "") {
-          setCaption(thisCaption);
-        }
-  
-        if (isFinal && speechFinal && thisCaption.trim() !== "") {
-          const { error } = await saveMessage(thisCaption, 'transcript');
-          if (error) {
-            console.error('Failed to save transcript:', error);
-          }
-          
-          clearTimeout(captionTimeout.current);
-          captionTimeout.current = setTimeout(() => {
-            setCaption(undefined);
-            clearTimeout(captionTimeout.current);
-          }, 3000);
-        }
-      };
-  
-      if (connectionState === LiveConnectionState.OPEN) {
-        connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
-        microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
+    const onTranscript = async (data: LiveTranscriptionEvent) => {
+      const { is_final: isFinal, speech_final: speechFinal } = data;
+      let thisCaption = data.channel.alternatives[0].transcript;
+
+      if (thisCaption !== "") {
+        setCaption(thisCaption);
       }
-  
+
+      if (isFinal && speechFinal && thisCaption.trim() !== "") {
+        const { error } = await saveMessage(thisCaption, 'transcript');
+        if (error) {
+          console.error('Failed to save transcript:', error);
+        }
+        
+        clearTimeout(captionTimeout.current);
+        captionTimeout.current = setTimeout(() => {
+          setCaption(undefined);
+          clearTimeout(captionTimeout.current);
+        }, 3000);
+      }
+    };
 
     if (connectionState === LiveConnectionState.OPEN) {
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
-    };
+    }
 
     return () => {
       if (connection) {
@@ -192,6 +177,26 @@ export default function MessagesForm() {
       clearTimeout(captionTimeout.current);
     };
   }, [connectionState, connection, microphone]);
+
+  // Keep connection alive
+  useEffect(() => {
+    if (!connection) return;
+
+    if (microphoneState !== MicrophoneState.Open && connectionState === LiveConnectionState.OPEN) {
+      connection.keepAlive();
+      keepAliveInterval.current = setInterval(() => {
+        connection.keepAlive();
+      }, 10000);
+    } else {
+      clearInterval(keepAliveInterval.current);
+    }
+
+    return () => {
+      clearInterval(keepAliveInterval.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [microphoneState, connectionState]);
+
 
   // Keep connection alive
   useEffect(() => {
