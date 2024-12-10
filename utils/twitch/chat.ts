@@ -1,6 +1,6 @@
 export async function sendTwitchMessage(broadcasterId: string, message: string) {
     try {
-        const response = await fetch('/api/twitch/message', {
+        const response = await fetch(process.env.NEXT_PUBLIC_APP_URL + '/api/twitch/message', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
