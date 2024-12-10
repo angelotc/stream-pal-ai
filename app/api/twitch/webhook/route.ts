@@ -2,7 +2,15 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getToken } from '@/utils/twitch/auth';
 import { subscribeToChatMessages, unsubscribeFromChatMessages } from '@/utils/twitch/subscriptions';
-import {  updateStreamStatus, insertChatMessage } from '@/utils/supabase/admin';
+import { 
+    insertChatMessage, 
+    getStreamSettings, 
+    getRecentMessagesWithUserData,
+    updateLastInteraction,
+    updateStreamStatus
+} from '@/utils/supabase/admin';
+import { formatMessagesForAI, shouldInteract } from '@/utils/messages';
+import { CHAT } from '@/config/constants';
 
 // Message type constants
 const MESSAGE_TYPE_VERIFICATION = 'webhook_callback_verification';
@@ -71,15 +79,62 @@ export async function POST(request: Request) {
                     case 'channel.chat.message':
                         console.log('Chat message received:', data.event);
                         try {
+                            // Always save the message
                             await insertChatMessage({
                                 text: data.event.message.text,
                                 broadcaster_user_id: data.event.broadcaster_user_id,
                                 chatter_user_name: data.event.chatter_user_name,
                                 chatter_user_id: data.event.chatter_user_id
                             });
+
+                            // Only generate AI response if not from bot
+                            if (data.event.chatter_user_id !== process.env.TWITCH_BOT_USER_ID) {
+                                const streamSettings = await getStreamSettings(data.event.broadcaster_user_id);
+
+                                if (streamSettings && shouldInteract(streamSettings.last_interaction)) {
+                                    const recentMessages = await getRecentMessagesWithUserData(
+                                        data.event.broadcaster_user_id, 
+                                        CHAT.MESSAGE_CONTEXT_SIZE
+                                    );
+
+                                    if (recentMessages) {
+                                        const formattedMessages = formatMessagesForAI(recentMessages);
+
+                                        // Generate and send AI response
+                                        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/chat`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ 
+                                                messages: formattedMessages,
+                                                priorityMessage: {
+                                                    text: data.event.message.text,
+                                                    chatter_user_name: data.event.chatter_user_name,
+                                                    type: 'twitch',
+                                                    broadcaster_twitch_id: data.event.broadcaster_user_id
+                                                }
+                                            })
+                                        });
+
+                                        if (response.ok) {
+                                            const { content } = await response.json();
+                                            await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/twitch/message`, {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    broadcasterId: data.event.broadcaster_user_id,
+                                                    message: content
+                                                })
+                                            });
+
+                                            await updateLastInteraction(data.event.broadcaster_user_id);
+                                        }
+                                    }
+                                }
+                            }
+
                             return new NextResponse(null, { status: 204 });
                         } catch (error) {
-                            console.error('Failed to save twitch message:', error);
+                            console.error('Failed to process chat message:', error);
                             return new NextResponse('Internal Server Error', { status: 500 });
                         }
                         break;

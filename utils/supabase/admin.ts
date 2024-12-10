@@ -414,6 +414,49 @@ export async function updateLastInteraction(platform_user_id: string) {
   }
 }
 
+/**
+ * Get stream settings and check if interaction is allowed
+ */
+async function getStreamSettings(platform_user_id: string) {
+    const { data: streamSettings, error } = await supabaseAdmin
+        .from('stream_settings')
+        .select('last_interaction')
+        .eq('platform_user_id', platform_user_id)
+        .single();
+
+    if (error) {
+        console.error('Error fetching stream settings:', error);
+        throw error;
+    }
+
+    return streamSettings;
+}
+
+/**
+ * Get recent messages with user data for AI context
+ */
+ async function getRecentMessagesWithUserData(broadcaster_twitch_id: string, limit: number) {
+    const { data: messages, error } = await supabaseAdmin
+        .from('messages')
+        .select(`
+            *,
+            users!inner (
+                twitch_user_id
+            )
+        `)
+        .eq('broadcaster_twitch_id', broadcaster_twitch_id)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.error('Error fetching recent messages:', error);
+        throw error;
+    }
+
+    return messages;
+}
+
+
 export {
   upsertProductRecord,
   upsertPriceRecord,
@@ -422,5 +465,7 @@ export {
   createOrRetrieveCustomer,
   manageSubscriptionStatusChange,
   updateStreamStatus,
-  insertChatMessage
+  insertChatMessage,
+  getStreamSettings,
+  getRecentMessagesWithUserData
 };

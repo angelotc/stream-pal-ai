@@ -3,12 +3,6 @@ import { MessageType, ChatMessage } from '@/types/chat';
 import { sendTwitchMessage } from './twitch/chat';
 import { CHAT } from '@/config/constants';
 
-function shouldInteract(lastInteractionTime: string | null): boolean {
-    if (!lastInteractionTime) return true;
-    const now = Date.now();
-    const lastInteraction = new Date(lastInteractionTime).getTime();
-    return (now - lastInteraction) >= CHAT.INTERACTION_COOLDOWN;
-}
 
 async function generateAIResponse(messages: ChatMessage[]) {
     console.log('Starting AI response generation with messages:', messages.length);
@@ -206,3 +200,24 @@ export const deleteMessage = async (messageId: string) => {
     return { error: err };
   }
 }; 
+
+/**
+ * Format messages for AI processing
+ */
+export function formatMessagesForAI(messages: any[]) {
+    return messages.map(m => ({
+        text: m.text ?? '',
+        type: m.type,
+        chatter_user_name: m.chatter_user_name ?? 'anonymous',
+        twitch_user_id: m.users?.twitch_user_id ?? 'unknown',
+        created_at: m.created_at,
+        broadcaster_twitch_id: m.broadcaster_twitch_id
+    }));
+} 
+
+export function shouldInteract(lastInteractionTime: string | null): boolean {
+  if (!lastInteractionTime) return true;
+  const now = Date.now();
+  const lastInteraction = new Date(lastInteractionTime).getTime();
+  return (now - lastInteraction) >= CHAT.INTERACTION_COOLDOWN;
+}
