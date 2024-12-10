@@ -98,35 +98,44 @@ export async function POST(request: Request) {
                                     );
 
                                     if (recentMessages) {
-                                        const formattedMessages = formatMessagesForAI(recentMessages);
+                                        // Find unanswered messages
+                                        const unansweredMessages = recentMessages.filter(m => 
+                                            !m.responded_to && 
+                                            m.text.trim().length > 0 &&
+                                            m.chatter_user_id !== process.env.TWITCH_BOT_USER_ID
+                                        );
 
-                                        // Generate and send AI response
-                                        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/chat`, {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ 
-                                                messages: formattedMessages,
-                                                priorityMessage: {
-                                                    text: data.event.message.text,
-                                                    chatter_user_name: data.event.chatter_user_name,
-                                                    type: 'twitch',
-                                                    broadcaster_twitch_id: data.event.broadcaster_user_id
-                                                }
-                                            })
-                                        });
+                                        if (unansweredMessages.length > 0) {
+                                            const formattedMessages = formatMessagesForAI(recentMessages);
 
-                                        if (response.ok) {
-                                            const { content } = await response.json();
-                                            await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/twitch/message`, {
+                                            // Generate and send AI response
+                                            const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/chat`, {
                                                 method: 'POST',
                                                 headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({
-                                                    broadcasterId: data.event.broadcaster_user_id,
-                                                    message: content
+                                                body: JSON.stringify({ 
+                                                    messages: formattedMessages,
+                                                    priorityMessage: {
+                                                        text: data.event.message.text,
+                                                        chatter_user_name: data.event.chatter_user_name,
+                                                        type: 'twitch',
+                                                        broadcaster_twitch_id: data.event.broadcaster_user_id
+                                                    }
                                                 })
                                             });
 
-                                            await updateLastInteraction(data.event.broadcaster_user_id);
+                                            if (response.ok) {
+                                                const { content } = await response.json();
+                                                await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/twitch/message`, {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({
+                                                        broadcasterId: data.event.broadcaster_user_id,
+                                                        message: content
+                                                    })
+                                                });
+
+                                                await updateLastInteraction(data.event.broadcaster_user_id);
+                                            }
                                         }
                                     }
                                 }
