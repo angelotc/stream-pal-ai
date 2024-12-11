@@ -8,7 +8,7 @@ import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/Micr
 import { saveMessage, getMessages } from '@/utils/messages';
 import { Database } from '@/types_db';
 import { createClient } from '@/utils/supabase/client';
-import {  DEEPGRAM, TRANSCRIPTION } from '@/config/constants';
+import { DEEPGRAM, TRANSCRIPTION } from '@/config/constants';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -42,7 +42,7 @@ export default function MessagesForm() {
   const [caption, setCaption] = useState<string | undefined>("Powered by Deepgram");
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
-  const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
+  const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone(); 1
   const captionTimeout = useRef<NodeJS.Timeout>();
   const keepAliveInterval = useRef<NodeJS.Timeout>();
   const lastTranscriptRef = useRef<{ text: string; timestamp: number } | null>(null);
@@ -55,21 +55,21 @@ export default function MessagesForm() {
       const { data: { user } } = await supabase.auth.getUser();
       const twitchUserId = user?.user_metadata?.provider_id;
       console.log('Loading messages for Twitch ID:', twitchUserId);
-      
+
       const { data, error } = await supabase
         .from('messages')
         .select('*')
         .eq('broadcaster_twitch_id', twitchUserId)
         .order('created_at', { ascending: false })
         .limit(50);
-      
+
       console.log('Messages query result:', { data, error });
-      
+
       if (error) {
         console.error('Error loading messages:', error);
         return;
       }
-      
+
       if (data) {
         setMessages(data);
       }
@@ -83,16 +83,16 @@ export default function MessagesForm() {
     const setupSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       const twitchUserId = user?.user_metadata?.provider_id;
-      
+
       const channel = supabase
         .channel('messages')
-        .on('postgres_changes', 
-          { 
-            event: 'INSERT', 
-            schema: 'public', 
+        .on('postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
             table: 'messages',
-            filter: `broadcaster_twitch_id=eq.${twitchUserId}` 
-          }, 
+            filter: `broadcaster_twitch_id=eq.${twitchUserId}`
+          },
           (payload) => {
             const newMessage = payload.new as MessageRow;
             setMessages(prev => [newMessage, ...prev]);
@@ -138,40 +138,40 @@ export default function MessagesForm() {
     let transcriptBuffer = '';
     let lastTranscriptTime = 0;
     let saveTimeout: NodeJS.Timeout | null = null;
-    
+
     const onTranscript = async (data: LiveTranscriptionEvent) => {
       const { is_final: isFinal, speech_final: speechFinal } = data;
       let thisCaption = data.channel.alternatives[0].transcript.trim();
-    
+
       if (!thisCaption) return;
-    
+
       if (!isFinal) {
         setCaption(thisCaption);
         return;
       }
-    
+
       if (isFinal) {
         const now = Date.now();
-    
+
         // Clear any existing save timeout
         if (saveTimeout) {
           clearTimeout(saveTimeout);
         }
-    
+
         // Always append to buffer
         transcriptBuffer += (transcriptBuffer ? ' ' : '') + thisCaption;
         lastTranscriptTime = now;
-    // Set a new timeout to save the buffer
+        // Set a new timeout to save the buffer
         saveTimeout = setTimeout(async () => {
           if (transcriptBuffer) {
             await saveMessage(transcriptBuffer, 'transcript');
             transcriptBuffer = '';
           }
         }, SAVE_DELAY);
-    
+
         // Update UI
         setCaption(transcriptBuffer);
-    
+
         // Clear caption after delay
         clearTimeout(captionTimeout.current);
         captionTimeout.current = setTimeout(() => {
@@ -255,7 +255,7 @@ export default function MessagesForm() {
             </span>
           )}
         </div>
-        
+
         {(messages.length > 0) && (
           <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto bg-gray-50">
             {messages
