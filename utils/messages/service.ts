@@ -39,6 +39,31 @@ export async function processMessage({
 
     const timestamp = new Date().toISOString();
     const supabase = isWebhook ? adminClient() : createClient();
+
+    // Check stream settings and cooldown first
+    const { data: streamSettings } = await supabase
+        .from('stream_settings')
+        .select('*')
+        .eq('platform_user_id', broadcasterId)
+        .single();
+
+    if (!streamSettings) {
+        console.error('Stream settings not found');
+        return;
+    }
+
+    // Check cooldown
+    const lastInteraction = streamSettings.last_interaction 
+        ? new Date(streamSettings.last_interaction) 
+        : new Date(0);
+    const cooldownSeconds = streamSettings.bot_cooldown_seconds ?? 6;
+    const now = new Date();
+    
+    if (now.getTime() - lastInteraction.getTime() < cooldownSeconds * 1000) {
+        console.log('Bot on cooldown, skipping message');
+        return;
+    }
+
     // Save message
     await supabase
         .from('messages')
@@ -59,16 +84,11 @@ export async function processMessage({
         return;
     }
 
-    // Check stream settings and cooldown
-    const { data: streamSettings } = await supabase
+    // Update last interaction time
+    await supabase
         .from('stream_settings')
-        .select('last_interaction, bot_prompt')
-        .eq('platform_user_id', broadcasterId)
-        .single();
-
-    if (!streamSettings || !shouldInteract(streamSettings.last_interaction)) {
-        return;
-    }
+        .update({ last_interaction: timestamp })
+        .eq('platform_user_id', broadcasterId);
 
     // Get recent messages
     const { data: recentMessages } = await supabase
@@ -100,10 +120,6 @@ export async function processMessage({
 
     if (response) {
         await sendTwitchMessage(broadcasterId, response);
-        await supabase
-            .from('stream_settings')
-            .update({ last_interaction: timestamp })
-            .eq('platform_user_id', broadcasterId);
     }
 }
 

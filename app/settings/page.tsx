@@ -1,4 +1,5 @@
 import BotSettingsForm from '@/components/ui/SettingsForms/BotSettingsForm';
+import BotCooldownForm from '@/components/ui/SettingsForms/BotCooldownForm';
 import BotPromptForm from '@/components/ui/SettingsForms/BotPromptForm';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
@@ -35,6 +36,7 @@ export default async function Settings() {
       <div className="p-4">
         <BotSettingsForm botEnabled={userDetails?.bot_enabled ?? false} />
         <BotPromptForm botPrompt={botPrompt?.bot_prompt ?? ''} />
+        <BotCooldownForm initialCooldown={botPrompt?.bot_cooldown_seconds ?? 6} />
       </div>
     </section>
   );

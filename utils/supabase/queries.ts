@@ -64,7 +64,7 @@ export const getBotPrompt = async (supabase: SupabaseClient) => {
   
   const { data: streamSettings } = await supabase
     .from('stream_settings')
-    .select('bot_prompt')
+    .select('bot_prompt, bot_cooldown_seconds')
     .eq('user_id', user.id)
     .eq('platform', 'twitch')
     .single();
