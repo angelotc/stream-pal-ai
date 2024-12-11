@@ -51,12 +51,22 @@ export async function GET(request: NextRequest) {
           console.log('Twitch user data:', twitchData);
           // Update user with Twitch user ID
           if (twitchData?.id) {
-            await supabase.auth.updateUser({
-              data: { 
-                twitch_user_id: twitchData.id,
-                twitch_user_name: twitchUsername
+            try {
+              const { data: updateData, error: updateError } = await supabase.auth.updateUser({
+                data: { 
+                  twitch_user_id: twitchData.id,
+                  twitch_user_name: twitchUsername
+                }
+              });
+
+              if (updateError) {
+                console.error('Error updating user metadata:', updateError);
+              } else {
+                console.log('Successfully updated user metadata:', updateData.user.user_metadata);
               }
-            });
+            } catch (error) {
+              console.error('Error in updateUser operation:', error);
+            }
           }
         } catch (error) {
           console.error('Error fetching Twitch data:', error);
