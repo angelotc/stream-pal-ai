@@ -6,7 +6,6 @@ import Card from '@/components/ui/Card';
 import { useDeepgram, LiveConnectionState, LiveTranscriptionEvents, LiveTranscriptionEvent } from '@/context/DeepgramContextProvider';
 import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/MicrophoneContextProvider';
 import { saveMessage, getMessages } from '@/utils/messages';
-import { createClient } from '@/utils/supabase/client';
 import { DEEPGRAM, TRANSCRIPTION } from '@/config/constants';
 import { Message } from '@/components/ui/Messages/MessageComponents';
 import { useMessageLoader } from '@/hooks/useMessageLoader';
@@ -18,9 +17,6 @@ export default function MessagesForm() {
   const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone(); 1
   const captionTimeout = useRef<NodeJS.Timeout>();
   const keepAliveInterval = useRef<NodeJS.Timeout>();
-  const lastTranscriptRef = useRef<{ text: string; timestamp: number } | null>(null);
-  // Initialize Supabase client
-  const supabase = createClient();
 
   useEffect(() => {
     setupMicrophone();
@@ -52,7 +48,6 @@ export default function MessagesForm() {
 
     const SAVE_DELAY = 2000; // 2 second delay before saving
     let transcriptBuffer = '';
-    let lastTranscriptTime = 0;
     let saveTimeout: NodeJS.Timeout | null = null;
 
     const onTranscript = async (data: LiveTranscriptionEvent) => {
@@ -76,7 +71,6 @@ export default function MessagesForm() {
 
         // Always append to buffer
         transcriptBuffer += (transcriptBuffer ? ' ' : '') + thisCaption;
-        lastTranscriptTime = now;
         // Set a new timeout to save the buffer
         saveTimeout = setTimeout(async () => {
           if (transcriptBuffer) {
