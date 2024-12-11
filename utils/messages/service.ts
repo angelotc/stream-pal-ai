@@ -21,6 +21,21 @@ export async function processMessage({
     chatterId: string;
     isWebhook?: boolean;
 }) {
+    console.log('Processing message:', {
+        text,
+        type,
+        userId,
+        broadcasterId,
+        chatterName,
+        chatterId,
+        isWebhook
+    });
+
+    if (!userId || !broadcasterId) {
+        console.error('Missing required user data:', { userId, broadcasterId });
+        return;
+    }
+
     const timestamp = new Date().toISOString();
     const supabase = isWebhook ? createClient(
     ) : createClient();
