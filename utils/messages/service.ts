@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/client';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { MessageType, ChatMessage } from '@/types/chat';
 import { sendTwitchMessage } from '../twitch/chat';
 import { CHAT } from '@/config/constants';
@@ -37,9 +38,7 @@ export async function processMessage({
     }
 
     const timestamp = new Date().toISOString();
-    const supabase = isWebhook ? createClient(
-    ) : createClient();
-
+    const supabase = isWebhook ? createAdminClient() : createClient();
     // Save message
     await supabase
         .from('messages')
