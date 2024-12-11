@@ -37,29 +37,29 @@ export default function BotPromptForm({ botPrompt }: { botPrompt: string }) {
 
   return (
     <Card
-      title="Bot Prompt Settings"
-      description="Customize how your bot interacts with chat"
+      title="Bot Personality"
+      description="Define how your bot should behave in chat"
       footer={
         <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
-          <p className="pb-4 sm:pb-0">
-            This prompt will be used for all bot interactions
+          <p className="pb-4 sm:pb-0 text-sm text-zinc-400">
+            💡 Be specific about tone, knowledge, and behavior
           </p>
           <Button
             variant="slim"
             onClick={handleSubmit}
             loading={isSubmitting}
           >
-            Save Prompt
+            💾 Save Personality
           </Button>
         </div>
       }
     >
-      <div className="mt-8">
+      <div className="mt-8 space-y-4">
         <textarea
-          className="w-full h-48 p-4 text-black bg-white border rounded-md"
+          className="w-full h-48 p-4 text-black bg-white border rounded-md focus:ring-2 focus:ring-blue-500"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Enter your custom bot prompt..."
+          placeholder="Example: Act as a friendly moderator who knows about gaming and streaming. Keep responses brief and engaging..."
         />
       </div>
     </Card>

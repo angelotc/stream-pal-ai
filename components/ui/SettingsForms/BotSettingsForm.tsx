@@ -50,27 +50,26 @@ export default function BotSettingsForm({ botEnabled }: { botEnabled: boolean })
 
   return (
     <Card
-      title="Bot Settings"
-      description="Enable or disable the bot assistant."
+      title="Bot Status"
+      description="Control when your bot is active"
       footer={
         <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
-          <p className="pb-4 sm:pb-0">
-            {enabled ? 'Bot is currently enabled' : 'Bot is currently disabled'}
+          <p className="pb-4 sm:pb-0 text-sm text-zinc-400">
+            {enabled ? '✅ Bot is active and will respond to chat' : '⏸️ Bot is paused'}
           </p>
-          <Button
-            variant="slim"
-            onClick={handleSubmit}
-            loading={isSubmitting}
-          >
-            {enabled ? 'Disable Bot' : 'Enable Bot'}
+          <Button variant="slim" onClick={handleSubmit} loading={isSubmitting}>
+            {enabled ? '🛑 Pause Bot' : '▶️ Activate Bot'}
           </Button>
         </div>
       }
     >
-      <div className="mt-8 mb-4 text-xl font-semibold">
-        <p className="text-zinc-400">
-          When enabled, the bot will join your stream and chat with viewers when you go live.
-        </p>
+      <div className="mt-8 space-y-4 text-zinc-400">
+        <p>When active, the bot will:</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li>Join your stream when you go live</li>
+          <li>Respond to chat messages based on your settings</li>
+          <li>Follow your custom prompt and cooldown rules</li>
+        </ul>
       </div>
     </Card>
   );

@@ -37,32 +37,32 @@ export default function BotCooldownForm({ initialCooldown = 5 }) {
 
   return (
     <Card
-      title="Bot Cooldown Settings"
-      description="Control how frequently the bot responds"
+      title="Response Rate"
+      description="Set how often your bot can respond"
       footer={
         <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
-          <p className="pb-4 sm:pb-0">
-            Minimum seconds between bot responses
+          <p className="pb-4 sm:pb-0 text-sm text-zinc-400">
+            ⏱️ Current cooldown: {cooldown} seconds
           </p>
-          <Button
-            variant="slim"
-            onClick={handleSubmit}
-            loading={isSubmitting}
-          >
-            Save Cooldown
+          <Button variant="slim" onClick={handleSubmit} loading={isSubmitting}>
+            ⚡ Update Rate
           </Button>
         </div>
       }
     >
-      <div className="mt-8">
+      <div className="mt-8 space-y-4">
         <input
-          type="number"
+          type="range"
           min="1"
           max="300"
           value={cooldown}
           onChange={(e) => setCooldown(Number(e.target.value))}
-          className="w-full p-4 text-black bg-white border rounded-md"
+          className="w-full"
         />
+        <div className="flex justify-between text-sm text-zinc-400">
+          <span>Faster (1s)</span>
+          <span>Slower (300s)</span>
+        </div>
       </div>
     </Card>
   );
