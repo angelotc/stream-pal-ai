@@ -29,28 +29,44 @@ export async function handleRequest(
 export async function signInWithOAuth(e: React.FormEvent<HTMLFormElement>) {
   // Prevent default form submission refresh
   e.preventDefault();
+  console.log('Starting OAuth sign-in process...');
+
   const formData = new FormData(e.currentTarget);
   const provider = String(formData.get('provider')).trim() as Provider;
+  console.log('Provider:', provider);
 
   // Create client-side supabase client and call signInWithOAuth
   const supabase = createClient();
   const redirectURL = getURL('/auth/callback');
-  await supabase.auth.signInWithOAuth({
-    provider: provider,
-    options: {
-      scopes: 'channel:read:subscriptions channel:manage:broadcast chat:read chat:edit user:read:email',
-      redirectTo: redirectURL,
-      queryParams: {
-        // Request additional Twitch user data
-        claims: JSON.stringify({
-          userinfo: {
-            preferred_username: true,
-            picture: true,
-            email: true,
-            sub: true  // This is the Twitch user ID
-          }
-        })
+  console.log('Redirect URL:', redirectURL);
+
+  try {
+    console.log('Initiating Supabase OAuth...');
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: provider,
+      options: {
+        scopes: 'channel:read:subscriptions channel:manage:broadcast chat:read chat:edit user:read:email',
+        redirectTo: redirectURL,
+        queryParams: {
+          // Request additional Twitch user data
+          claims: JSON.stringify({
+            userinfo: {
+              preferred_username: true,
+              picture: true,
+              email: true,
+              sub: true  // This is the Twitch user ID
+            }
+          })
+        }
       }
+    });
+
+    if (error) {
+      console.error('OAuth error:', error);
+    } else {
+      console.log('OAuth initiated successfully:', data);
     }
-  });
+  } catch (error) {
+    console.error('Unexpected error during OAuth:', error);
+  }
 }
