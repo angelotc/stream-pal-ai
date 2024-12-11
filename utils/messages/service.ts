@@ -52,18 +52,6 @@ export async function processMessage({
         return;
     }
 
-    // Check cooldown
-    const lastInteraction = streamSettings.last_interaction 
-        ? new Date(streamSettings.last_interaction) 
-        : new Date(0);
-    const cooldownSeconds = streamSettings.bot_cooldown_seconds ?? 6;
-    const now = new Date();
-    
-    if (now.getTime() - lastInteraction.getTime() < cooldownSeconds * 1000) {
-        console.log('Bot on cooldown, skipping message');
-        return;
-    }
-
     // Save message
     await supabase
         .from('messages')
@@ -104,6 +92,19 @@ export async function processMessage({
         .limit(CHAT.MESSAGE_CONTEXT_SIZE);
 
     if (!recentMessages?.length) return;
+    
+    
+    // Check cooldown
+    const lastInteraction = streamSettings.last_interaction 
+        ? new Date(streamSettings.last_interaction) 
+        : new Date(0);
+    const cooldownSeconds = streamSettings.bot_cooldown_seconds ?? 6;
+    const now = new Date();
+    
+    if (now.getTime() - lastInteraction.getTime() < cooldownSeconds * 1000) {
+        console.log('Bot on cooldown, skipping message');
+        return;
+    }
 
     // Generate and send response
     const response = await generateAIResponse({
