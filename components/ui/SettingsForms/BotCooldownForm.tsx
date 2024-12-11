@@ -1,59 +1,69 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
 
 export default function BotCooldownForm({ initialCooldown = 5 }) {
-    const [cooldown, setCooldown] = useState(initialCooldown);
-    const [saving, setSaving] = useState(false);
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cooldown, setCooldown] = useState(initialCooldown);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setSaving(true);
+  const handleSubmit = async () => {
+    try {
+      setIsSubmitting(true);
+      const supabase = createClient();
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not found');
+      
+      const { error } = await supabase
+        .from('stream_settings')
+        .update({ bot_cooldown_seconds: cooldown })
+        .eq('user_id', user.id)
+        .eq('platform', 'twitch');
 
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+      if (error) throw error;
+      
+      router.refresh();
+    } catch (error) {
+      console.error('Error updating bot cooldown:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-        if (!user) {
-            setSaving(false);
-            return;
-        }
-
-        const { error } = await supabase
-            .from('stream_settings')
-            .update({ bot_cooldown_seconds: cooldown })
-            .eq('user_id', user.id);
-
-        setSaving(false);
-    };
-
-    return (
-        <Card title="Cooldown Settings">
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label htmlFor="cooldown" className="block text-sm font-medium text-gray-700">
-                        Bot Cooldown (seconds)
-                    </label>
-                    <input
-                        type="number"
-                        id="cooldown"
-                        min="1"
-                        max="300"
-                        value={cooldown}
-                        onChange={(e) => setCooldown(Number(e.target.value))}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                    />
-                </div>
-                <Button
-                    variant="slim"
-                    type="submit"
-                    disabled={saving}
-                >
-                    {saving ? 'Saving...' : 'Save Cooldown'}
-                </Button>
-            </form>
-        </Card>
-    );
+  return (
+    <Card
+      title="Bot Cooldown Settings"
+      description="Control how frequently the bot responds"
+      footer={
+        <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
+          <p className="pb-4 sm:pb-0">
+            Minimum seconds between bot responses
+          </p>
+          <Button
+            variant="slim"
+            onClick={handleSubmit}
+            loading={isSubmitting}
+          >
+            Save Cooldown
+          </Button>
+        </div>
+      }
+    >
+      <div className="mt-8">
+        <input
+          type="number"
+          min="1"
+          max="300"
+          value={cooldown}
+          onChange={(e) => setCooldown(Number(e.target.value))}
+          className="w-full p-4 text-black bg-white border rounded-md"
+        />
+      </div>
+    </Card>
+  );
 }
