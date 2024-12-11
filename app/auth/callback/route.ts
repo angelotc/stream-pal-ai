@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
           // Update user with Twitch user ID
           if (twitchData?.id) {
             try {
+              // Update auth.users metadata
               const { data: updateData, error: updateError } = await supabase.auth.updateUser({
                 data: { 
                   twitch_user_id: twitchData.id,
@@ -63,9 +64,24 @@ export async function GET(request: NextRequest) {
                 console.error('Error updating user metadata:', updateError);
               } else {
                 console.log('Successfully updated user metadata:', updateData.user.user_metadata);
+                
+                // Update the custom columns in the users table
+                const { error: dbError } = await supabase
+                  .from('users')
+                  .update({
+                    twitch_user_id: twitchData.id,
+                    twitch_user_name: twitchUsername
+                  })
+                  .eq('id', data.user.id);
+
+                if (dbError) {
+                  console.error('Error updating users table:', dbError);
+                } else {
+                  console.log('Successfully updated users table');
+                }
               }
             } catch (error) {
-              console.error('Error in updateUser operation:', error);
+              console.error('Error in update operations:', error);
             }
           }
         } catch (error) {
