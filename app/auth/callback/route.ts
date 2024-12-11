@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
             access_token: accessToken,
             twitch_username: twitchUsername
           });
-
+          console.log('Twitch user data:', twitchData);
           // Update user with Twitch user ID
           if (twitchData?.id) {
             await supabase.auth.updateUser({
