@@ -350,7 +350,7 @@ const insertChatMessage = async (messageData: {
 /**
  * Get all currently active streams
  */
-export async function getActiveStreamSettings() {
+const getActiveStreamSettings = async () => {
   const { data: streamSettings, error } = await supabaseAdmin
     .from('stream_settings')
     .select(`
@@ -369,15 +369,15 @@ export async function getActiveStreamSettings() {
   }
 
   return streamSettings || [];
-}
+};
 
 /**
  * Get recent chat messages for a specific broadcaster
  */
-export async function getChatHistory(
+const getChatHistory = async (
   broadcaster_user_id: string,
   limit: number = 10
-) {
+) => {
   const supabase = createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -397,12 +397,12 @@ export async function getChatHistory(
 
   // Return messages in chronological order (oldest first)
   return (messages || []).reverse();
-}
+};
 
 /**
  * Update the last interaction timestamp for a stream
  */
-export async function updateLastInteraction(platform_user_id: string) {
+const updateLastInteraction = async (platform_user_id: string) => {
   const { error } = await supabaseAdmin
     .from('stream_settings')
     .update({ updated_at: new Date().toISOString() })
@@ -412,12 +412,12 @@ export async function updateLastInteraction(platform_user_id: string) {
     console.error('Error updating last interaction:', error);
     throw error;
   }
-}
+};
 
 /**
  * Get stream settings and check if interaction is allowed
  */
-async function getStreamSettings(platform_user_id: string) {
+const getStreamSettings = async (platform_user_id: string) => {
     const { data: streamSettings, error } = await supabaseAdmin
         .from('stream_settings')
         .select('last_interaction')
@@ -430,12 +430,12 @@ async function getStreamSettings(platform_user_id: string) {
     }
 
     return streamSettings;
-}
+};
 
 /**
  * Get recent messages with user data for AI context
  */
- async function getRecentMessagesWithUserData(broadcaster_twitch_id: string, limit: number) {
+const getRecentMessagesWithUserData = async (broadcaster_twitch_id: string, limit: number) => {
     const { data: messages, error } = await supabaseAdmin
         .from('messages')
         .select(`
@@ -454,8 +454,7 @@ async function getStreamSettings(platform_user_id: string) {
     }
 
     return messages;
-}
-
+};
 
 export {
   upsertProductRecord,
@@ -467,5 +466,8 @@ export {
   updateStreamStatus,
   insertChatMessage,
   getStreamSettings,
-  getRecentMessagesWithUserData
+  getRecentMessagesWithUserData,
+  getActiveStreamSettings,
+  getChatHistory,
+  updateLastInteraction
 };

@@ -9,6 +9,7 @@ interface UseMessageLoaderOptions {
 
 export function useMessageLoader({ limit = 50, autoSubscribe = true }: UseMessageLoaderOptions = {}) {
   const [messages, setMessages] = useState<MessageRow[]>([]);
+  const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const supabase = createClient();
@@ -82,6 +83,7 @@ export function useMessageLoader({ limit = 50, autoSubscribe = true }: UseMessag
     messages,
     setMessages,
     isLoading,
-    error
+    error,
+    user
   };
 } 

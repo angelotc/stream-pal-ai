@@ -5,14 +5,14 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { useDeepgram, LiveConnectionState, LiveTranscriptionEvents, LiveTranscriptionEvent } from '@/context/DeepgramContextProvider';
 import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/MicrophoneContextProvider';
-import { saveMessage, getMessages } from '@/utils/messages';
+import { processMessage } from '@/utils/messages/service';
 import { DEEPGRAM, TRANSCRIPTION } from '@/config/constants';
 import { Message } from '@/components/ui/Messages/MessageComponents';
 import { useMessageLoader } from '@/hooks/useMessageLoader';
 
 export default function MessagesForm() {
   const [caption, setCaption] = useState<string | undefined>("Powered by Deepgram");
-  const { messages, isLoading } = useMessageLoader();
+  const { messages, isLoading, user } = useMessageLoader();
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone(); 1
   const captionTimeout = useRef<NodeJS.Timeout>();
@@ -74,7 +74,15 @@ export default function MessagesForm() {
         // Set a new timeout to save the buffer
         saveTimeout = setTimeout(async () => {
           if (transcriptBuffer) {
-            await saveMessage(transcriptBuffer, 'transcript');
+            await processMessage({
+                text: transcriptBuffer,
+                type: 'transcript',
+                userId: user.id,  // You'll need to get the user from Supabase auth
+                broadcasterId: user.user_metadata.provider_id,
+                chatterName: user.user_metadata.name,
+                chatterId: user.user_metadata.provider_id,
+                isWebhook: false
+            });
             transcriptBuffer = '';
           }
         }, SAVE_DELAY);

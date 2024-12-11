@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyWebhookSignature } from '@/utils/twitch/webhook-verification';
 import { handleStreamStart, handleStreamEnd } from '@/utils/twitch/event-handlers';
-import { processNewChatMessage } from '@/utils/twitch/chat-processor';
+import { processMessage } from '@/utils/messages/service';
 
 export async function POST(request: Request) {
     console.log("Webhook endpoint hit!");
@@ -31,7 +31,15 @@ export async function POST(request: Request) {
             case 'notification':
                 switch (data.subscription.type) {
                     case 'channel.chat.message':
-                        await processNewChatMessage(data.event);
+                        await processMessage({
+                            text: data.event.message.text,
+                            type: 'twitch',
+                            userId: data.event.broadcaster_user_id,
+                            broadcasterId: data.event.broadcaster_user_id,
+                            chatterName: data.event.chatter_user_name,
+                            chatterId: data.event.chatter_user_id,
+                            isWebhook: true
+                        });
                         break;
                     case 'stream.online':
                         await handleStreamStart(data.event);
