@@ -55,7 +55,10 @@ export default function MessagesForm() {
       let thisCaption = data.channel.alternatives[0].transcript.trim();
 
       if (!thisCaption) return;
-
+      if (!user) {
+        console.error('User not found');
+        return;
+      }
       if (!isFinal) {
         setCaption(thisCaption);
         return;

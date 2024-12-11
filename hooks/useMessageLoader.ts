@@ -19,8 +19,9 @@ export function useMessageLoader({ limit = 50, autoSubscribe = true }: UseMessag
     const loadMessages = async () => {
       try {
         setIsLoading(true);
-        const { data: { user } } = await supabase.auth.getUser();
-        const twitchUserId = user?.user_metadata?.provider_id;
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        setUser(authUser);
+        const twitchUserId = authUser?.user_metadata?.provider_id;
 
         if (!twitchUserId) {
           throw new Error('No Twitch user ID found');
