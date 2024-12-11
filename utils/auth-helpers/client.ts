@@ -38,8 +38,19 @@ export async function signInWithOAuth(e: React.FormEvent<HTMLFormElement>) {
   await supabase.auth.signInWithOAuth({
     provider: provider,
     options: {
-      scopes: 'channel:read:subscriptions channel:manage:broadcast chat:read chat:edit',
-      redirectTo: redirectURL
+      scopes: 'channel:read:subscriptions channel:manage:broadcast chat:read chat:edit user:read:email',
+      redirectTo: redirectURL,
+      queryParams: {
+        // Request additional Twitch user data
+        claims: JSON.stringify({
+          userinfo: {
+            preferred_username: true,
+            picture: true,
+            email: true,
+            sub: true  // This is the Twitch user ID
+          }
+        })
+      }
     }
   });
 }
