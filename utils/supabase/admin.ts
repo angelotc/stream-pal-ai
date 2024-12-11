@@ -12,9 +12,9 @@ type StreamSettings = Tables<'stream_settings'>;
 // Change to control trial period length
 const TRIAL_PERIOD_DAYS = 0;
 
-// Note: supabaseAdmin uses the SERVICE_ROLE_KEY which you must only use in a secure server-side context
+// Note: adminClient uses the SERVICE_ROLE_KEY which you must only use in a secure server-side context
 // as it has admin privileges and overwrites RLS policies!
-export const supabaseAdmin = createClient<Database>(
+export const adminClient = () => createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
@@ -29,7 +29,7 @@ const upsertProductRecord = async (product: Stripe.Product) => {
     metadata: product.metadata
   };
 
-  const { error: upsertError } = await supabaseAdmin
+  const { error: upsertError } = await adminClient()!
     .from('products')
     .upsert([productData]);
   if (upsertError)
@@ -56,7 +56,7 @@ const upsertPriceRecord = async (
     metadata: null
   };
 
-  const { error: upsertError } = await supabaseAdmin
+  const { error: upsertError } = await adminClient()
     .from('prices')
     .upsert([priceData]);
 
@@ -78,7 +78,7 @@ const upsertPriceRecord = async (
 };
 
 const deleteProductRecord = async (product: Stripe.Product) => {
-  const { error: deletionError } = await supabaseAdmin
+  const { error: deletionError } = await adminClient()
     .from('products')
     .delete()
     .eq('id', product.id);
@@ -88,7 +88,7 @@ const deleteProductRecord = async (product: Stripe.Product) => {
 };
 
 const deletePriceRecord = async (price: Stripe.Price) => {
-  const { error: deletionError } = await supabaseAdmin
+  const { error: deletionError } = await adminClient()
     .from('prices')
     .delete()
     .eq('id', price.id);
@@ -97,7 +97,7 @@ const deletePriceRecord = async (price: Stripe.Price) => {
 };
 
 const upsertCustomerToSupabase = async (uuid: string, customerId: string) => {
-  const { error: upsertError } = await supabaseAdmin
+  const { error: upsertError } = await adminClient()
     .from('customers')
     .upsert([{ id: uuid, stripe_customer_id: customerId }]);
 
@@ -124,7 +124,7 @@ const createOrRetrieveCustomer = async ({
 }) => {
   // Check if the customer already exists in Supabase
   const { data: existingSupabaseCustomer, error: queryError } =
-    await supabaseAdmin
+    await adminClient()
       .from('customers')
       .select('*')
       .eq('id', uuid)
@@ -157,7 +157,7 @@ const createOrRetrieveCustomer = async ({
   if (existingSupabaseCustomer && stripeCustomerId) {
     // If Supabase has a record but doesn't match Stripe, update Supabase record
     if (existingSupabaseCustomer.stripe_customer_id !== stripeCustomerId) {
-      const { error: updateError } = await supabaseAdmin
+      const { error: updateError } = await adminClient()
         .from('customers')
         .update({ stripe_customer_id: stripeCustomerId })
         .eq('id', uuid);
@@ -202,7 +202,7 @@ const copyBillingDetailsToCustomer = async (
   if (!name || !phone || !address) return;
   //@ts-ignore
   await stripe.customers.update(customer, { name, phone, address });
-  const { error: updateError } = await supabaseAdmin
+  const { error: updateError } = await adminClient()
     .from('users')
     .update({
       billing_address: { ...address },
@@ -218,7 +218,7 @@ const manageSubscriptionStatusChange = async (
   createAction = false
 ) => {
   // Get customer's UUID from mapping table.
-  const { data: customerData, error: noCustomerError } = await supabaseAdmin
+  const { data: customerData, error: noCustomerError } = await adminClient()
     .from('customers')
     .select('id')
     .eq('stripe_customer_id', customerId)
@@ -267,7 +267,7 @@ const manageSubscriptionStatusChange = async (
       : null
   };
 
-  const { error: upsertError } = await supabaseAdmin
+  const { error: upsertError } = await adminClient()
     .from('subscriptions')
     .upsert([subscriptionData]);
   if (upsertError)
@@ -291,7 +291,7 @@ const updateStreamStatus = async (
   isLive: boolean
 ) => {
   // Find the user by twitch_user_id
-  const { data: userData, error: userError } = await supabaseAdmin
+  const { data: userData, error: userError } = await adminClient()
     .from('users')
     .select('*')
     .eq('twitch_user_id', platformUserId)
@@ -303,7 +303,7 @@ const updateStreamStatus = async (
   }
 
   // Upsert stream settings
-  const { error: updateError } = await supabaseAdmin
+  const { error: updateError } = await adminClient()
     .from('stream_settings')
     .upsert(
       {
@@ -329,7 +329,7 @@ const insertChatMessage = async (messageData: {
   chatter_user_name: string;
   chatter_user_id: string;
 }) => {
-  const { error } = await supabaseAdmin
+  const { error } = await adminClient()
     .from('messages')
     .insert({
       text: messageData.text,
@@ -351,7 +351,7 @@ const insertChatMessage = async (messageData: {
  * Get all currently active streams
  */
 const getActiveStreamSettings = async () => {
-  const { data: streamSettings, error } = await supabaseAdmin
+  const { data: streamSettings, error } = await adminClient()
     .from('stream_settings')
     .select(`
             *,
@@ -403,7 +403,7 @@ const getChatHistory = async (
  * Update the last interaction timestamp for a stream
  */
 const updateLastInteraction = async (platform_user_id: string) => {
-  const { error } = await supabaseAdmin
+  const { error } = await adminClient()
     .from('stream_settings')
     .update({ updated_at: new Date().toISOString() })
     .eq('platform_user_id', platform_user_id);
@@ -418,7 +418,7 @@ const updateLastInteraction = async (platform_user_id: string) => {
  * Get stream settings and check if interaction is allowed
  */
 const getStreamSettings = async (platform_user_id: string) => {
-    const { data: streamSettings, error } = await supabaseAdmin
+    const { data: streamSettings, error } = await adminClient()
         .from('stream_settings')
         .select('last_interaction')
         .eq('platform_user_id', platform_user_id)
@@ -436,7 +436,7 @@ const getStreamSettings = async (platform_user_id: string) => {
  * Get recent messages with user data for AI context
  */
 const getRecentMessagesWithUserData = async (broadcaster_twitch_id: string, limit: number) => {
-    const { data: messages, error } = await supabaseAdmin
+    const { data: messages, error } = await adminClient()
         .from('messages')
         .select(`
             *,
