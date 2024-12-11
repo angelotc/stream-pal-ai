@@ -6,14 +6,14 @@ import Card from '@/components/ui/Card';
 import { useDeepgram, LiveConnectionState, LiveTranscriptionEvents, LiveTranscriptionEvent } from '@/context/DeepgramContextProvider';
 import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/MicrophoneContextProvider';
 import { saveMessage, getMessages } from '@/utils/messages';
-import { Database } from '@/types_db';
 import { createClient } from '@/utils/supabase/client';
 import { DEEPGRAM, TRANSCRIPTION } from '@/config/constants';
-import { MessageRow } from '@/types/messages';
 import { Message } from '@/components/ui/Messages/MessageComponents';
+import { useMessageLoader } from '@/hooks/useMessageLoader';
+
 export default function MessagesForm() {
   const [caption, setCaption] = useState<string | undefined>("Powered by Deepgram");
-  const [messages, setMessages] = useState<MessageRow[]>([]);
+  const { messages, isLoading } = useMessageLoader();
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone(); 1
   const captionTimeout = useRef<NodeJS.Timeout>();
@@ -21,63 +21,6 @@ export default function MessagesForm() {
   const lastTranscriptRef = useRef<{ text: string; timestamp: number } | null>(null);
   // Initialize Supabase client
   const supabase = createClient();
-
-  // Load initial messages
-  useEffect(() => {
-    const loadMessages = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const twitchUserId = user?.user_metadata?.provider_id;
-      console.log('Loading messages for Twitch ID:', twitchUserId);
-
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('broadcaster_twitch_id', twitchUserId)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      console.log('Messages query result:', { data, error });
-
-      if (error) {
-        console.error('Error loading messages:', error);
-        return;
-      }
-
-      if (data) {
-        setMessages(data);
-      }
-    };
-
-    loadMessages();
-  }, [supabase]);
-
-  // Subscribe to new messages
-  useEffect(() => {
-    const setupSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const twitchUserId = user?.user_metadata?.provider_id;
-
-      const channel = supabase
-        .channel('messages')
-        .on('postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages',
-            filter: `broadcaster_twitch_id=eq.${twitchUserId}`
-          },
-          (payload) => {
-            const newMessage = payload.new as MessageRow;
-            setMessages(prev => [newMessage, ...prev]);
-          }
-        )
-        .subscribe();
-
-      return () => supabase.removeChannel(channel);
-    };
-
-    setupSubscription();
-  }, [supabase]);
 
   useEffect(() => {
     setupMicrophone();
@@ -221,22 +164,28 @@ export default function MessagesForm() {
       }
     >
       <div className="flex flex-col space-y-4">
-        <div className="mt-8 mb-4 min-h-[100px] flex items-center justify-center">
-          {caption && (
-            <span className="bg-black/70 p-4 rounded-lg text-xl">
-              {caption}
-            </span>
-          )}
-        </div>
-
-        {(messages.length > 0) && (
-          <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto bg-gray-50">
-            {messages
-              .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
-              .map((item) => (
-                <Message key={item.id} message={item} />
-              ))}
+        {isLoading ? (
+          <div className="flex justify-center p-4">
+            <span>Loading messages...</span>
           </div>
+        ) : (
+          <>
+            <div className="mt-8 mb-4 min-h-[100px] flex items-center justify-center">
+              {caption && (
+                <span className="bg-black/70 p-4 rounded-lg text-xl">
+                  {caption}
+                </span>
+              )}
+            </div>
+
+            {(messages.length > 0) && (
+              <div className="border rounded-lg p-4 max-h-[300px] overflow-y-auto bg-gray-50">
+                {messages.map((item) => (
+                  <Message key={item.id} message={item} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </Card>
