@@ -38,7 +38,7 @@ export default function BotCooldownForm({ initialCooldown = 5 }) {
   return (
     <Card
       title="Response Rate"
-      description="Set how often your bot can respond"
+      description="Set how often your bot can respond. Note: the lower the value, the more message credits you will use."
       footer={
         <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
           <p className="pb-4 sm:pb-0 text-sm text-zinc-400">
@@ -54,14 +54,14 @@ export default function BotCooldownForm({ initialCooldown = 5 }) {
         <input
           type="range"
           min="1"
-          max="300"
+          max="60"
           value={cooldown}
           onChange={(e) => setCooldown(Number(e.target.value))}
           className="w-full"
         />
         <div className="flex justify-between text-sm text-zinc-400">
           <span>Faster (1s)</span>
-          <span>Slower (300s)</span>
+          <span>Slower (60s)</span>
         </div>
       </div>
     </Card>
