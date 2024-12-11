@@ -75,13 +75,13 @@ export default function MessagesForm() {
         saveTimeout = setTimeout(async () => {
           if (transcriptBuffer) {
             await processMessage({
-                text: transcriptBuffer,
-                type: 'transcript',
-                userId: user.id,  // You'll need to get the user from Supabase auth
-                broadcasterId: user.user_metadata.provider_id,
-                chatterName: user.user_metadata.name,
-                chatterId: user.user_metadata.provider_id,
-                isWebhook: false
+              text: transcriptBuffer,
+              type: 'transcript',
+              userId: user.id,  // You'll need to get the user from Supabase auth
+              broadcasterId: user.user_metadata.provider_id,
+              chatterName: user.user_metadata.name,
+              chatterId: user.user_metadata.provider_id,
+              isWebhook: false
             });
             transcriptBuffer = '';
           }
