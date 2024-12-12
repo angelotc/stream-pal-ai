@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
                         platform: 'twitch',
                         platform_user_id: twitchData.id,
                         bot_cooldown_seconds: STREAM_SETTINGS.DEFAULT_COOLDOWN,
-                        bot_prompt: STREAM_SETTINGS.DEFAULT_PROMPT,
+                        bot_prompt: STREAM_SETTINGS.DEFAULT_PROMPT.replace('{STREAMER_NAME}', twitchUsername),
                         is_live: STREAM_SETTINGS.DEFAULT_IS_LIVE,
                         created_at: new Date().toISOString(),
                         updated_at: new Date().toISOString()
