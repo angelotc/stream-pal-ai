@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { getErrorRedirect, getStatusRedirect } from '@/utils/helpers';
 import { getStreamerData } from '@/utils/twitch/auth';
+import { STREAM_SETTINGS } from '@/config/constants';
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -78,6 +79,38 @@ export async function GET(request: NextRequest) {
                   console.error('Error updating users table:', dbError);
                 } else {
                   console.log('Successfully updated users table');
+                  
+                  // Before upserting, check if stream settings already exist
+                  const { data: existingSettings, error: settingsCheckError } = await supabase
+                    .from('stream_settings')
+                    .select('*')
+                    .eq('user_id', data.user.id)
+                    .eq('platform', 'twitch')
+                    .single();
+
+                  if (settingsCheckError && settingsCheckError.code === 'PGRST116') {
+                    // No existing settings found, proceed with upsert of default settings
+                    const { error: settingsError } = await supabase
+                      .from('stream_settings')
+                      .insert({
+                        user_id: data.user.id,
+                        platform: 'twitch',
+                        platform_user_id: twitchData.id,
+                        bot_cooldown_seconds: STREAM_SETTINGS.DEFAULT_COOLDOWN,
+                        bot_prompt: STREAM_SETTINGS.DEFAULT_PROMPT,
+                        is_live: STREAM_SETTINGS.DEFAULT_IS_LIVE,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                      });
+
+                    if (settingsError) {
+                      console.error('Error inserting stream settings:', settingsError);
+                    } else {
+                      console.log('Successfully inserted stream settings');
+                    }
+                  } else if (!existingSettings) {
+                    console.error('Unexpected error checking stream settings:', settingsCheckError);
+                  }
                 }
               }
             } catch (error) {

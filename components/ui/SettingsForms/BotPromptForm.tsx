@@ -18,7 +18,7 @@ export default function BotPromptForm({ botPrompt }: { botPrompt: string }) {
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not found');
-      
+      console.log(user);
       const { error } = await supabase
         .from('stream_settings')
         .update({ bot_prompt: prompt })
