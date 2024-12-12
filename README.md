@@ -11,13 +11,13 @@ The all-in-one starter kit for high-performance SaaS applications.
 
 ## Demo
 
-- https://subscription-payments.vercel.app/
+- https://stream-pal-ai.vercel.app/
 
-[![Screenshot of demo](./public/demo.png)](https://subscription-payments.vercel.app/)
+<!-- [![Screenshot of demo](./public/stream-pal-demo.png)](https://stream-pal-ai.vercel.app/) -->
 
 ## Architecture
 
-![Architecture diagram](./public/architecture_diagram.png)
+![Architecture diagram](./public/stream-pal-architecture.png)
 
 ## Step-by-step setup
 
