@@ -27,11 +27,11 @@ export default function MessagesForm() {
     if (microphoneState === MicrophoneState.Ready) {
       connectToDeepgram({
         model: DEEPGRAM.OPTIONS.MODEL,
-        interim_results: DEEPGRAM.OPTIONS.interim_results,
-        smart_format: DEEPGRAM.OPTIONS.smart_format,
-        filler_words: DEEPGRAM.OPTIONS.filler_words,
+        interim_results: DEEPGRAM.OPTIONS.INTERIM_RESULTS,
+        smart_format: DEEPGRAM.OPTIONS.SMART_FORMAT,
+        filler_words: DEEPGRAM.OPTIONS.FILLER_WORDS,
         utterance_end_ms: DEEPGRAM.OPTIONS.UTTERANCE_END_MS,
-        vad_events: DEEPGRAM.OPTIONS.vad_events
+        vad_events: DEEPGRAM.OPTIONS.VAD_EVENTS
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

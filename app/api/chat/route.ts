@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { ChatMessage } from '@/types/chat';
 import { createClient } from '@/utils/supabase/server';
-import { STREAM_SETTINGS } from "@/config/constants";
+import { STREAM_SETTINGS, OPENAI, CHAT } from "@/config/constants";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -58,13 +58,7 @@ export async function POST(request: Request) {
       content: `${m.type === 'transcript' ? 'streamer' : m.chatter_user_name}: ${m.text}`
     }));
     console.log("formattedMessages", formattedMessages);
-    // Add global context and constraints
-    const GLOBAL_CONTEXT = `
-      Respond naturally as a Twitch chat bot. Keep responses short (1-3 lines).
-      Use emojis and Twitch-style messages.
-      Do not include timestamps or formatting metadata.
-      Do not repeat your own name or prefix responses with your name.
-    `;
+
 
     const botPrompt = (streamSettings?.bot_prompt + STREAM_SETTINGS.GLOBAL_PROMPT);
     console.log("botPrompt", botPrompt);
@@ -79,11 +73,11 @@ export async function POST(request: Request) {
         ...formattedMessages.map(m => ({ 
           role: m.role as 'assistant' | 'user', 
           content: m.content 
-        })).slice(-3)  // Keep recent context
+        })).slice(-CHAT.CONTEXT_SIZE)  // Keep recent context
       ],
-      model: "gpt-4o-mini",
-      max_tokens: 100,
-      temperature: 0.7
+      model: OPENAI.MODEL,
+      max_tokens: OPENAI.MAX_TOKENS,
+      temperature: OPENAI.TEMPERATURE
     });
 
     return NextResponse.json({ content: completion.choices[0].message.content });
