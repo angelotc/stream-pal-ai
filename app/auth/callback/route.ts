@@ -105,22 +105,10 @@ export async function GET(request: NextRequest) {
                       });
 
                     if (settingsError) {
-                      console.error('❌ Failed to create default stream settings:', {
-                        userId: data.user.id,
-                        platformUserId: twitchData.id,
-                        error: settingsError
-                      });
-                    } else {
-                      console.log('✅ Successfully created default stream settings for user', {
-                        userId: data.user.id,
-                        platformUserId: twitchData.id
-                      });
+                      console.error(settingsError);
                     }
                   } else if (!existingSettings) {
-                    console.warn('⚠️ Unexpected error checking stream settings:', {
-                      error: settingsCheckError,
-                      userId: data.user.id
-                    });
+                    console.error(settingsCheckError);
                   }
                 }
               }
