@@ -9,6 +9,7 @@ import { processMessage } from '@/utils/messages/service';
 import { DEEPGRAM, TRANSCRIPTION } from '@/config/constants';
 import { Message } from '@/components/ui/Messages/MessageComponents';
 import { useMessageLoader } from '@/hooks/useMessageLoader';
+import { CHAT } from '@/config/constants';
 
 export default function MessagesForm() {
   const [caption, setCaption] = useState<string | undefined>("Powered by Deepgram");
@@ -46,7 +47,6 @@ export default function MessagesForm() {
       }
     };
 
-    const SAVE_DELAY = 2000; // 2 second delay before saving
     let transcriptBuffer = '';
     let saveTimeout: NodeJS.Timeout | null = null;
 
@@ -88,7 +88,7 @@ export default function MessagesForm() {
             });
             transcriptBuffer = '';
           }
-        }, SAVE_DELAY);
+        }, CHAT.SAVE_DELAY);
 
         // Update UI
         setCaption(transcriptBuffer);

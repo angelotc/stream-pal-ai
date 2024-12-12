@@ -19,7 +19,8 @@ export const CHAT = {
   INTERACTION_COOLDOWN: 10 * 1000, // 10 seconds
   MESSAGE_CONTEXT_SIZE: 10,
   RESPONSE_DELAY: 2000, // 2 seconds delay before responding
-  CONTEXT_SIZE: 3
+  CONTEXT_SIZE: 3,
+  SAVE_DELAY: 2000 // 2 seconds delay before saving
 } as const;
 
 export const STREAM_SETTINGS = {
