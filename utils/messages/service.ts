@@ -131,7 +131,7 @@ async function generateAIResponse({ messages, priorityMessage }: {
 }) {
     const formattedMessages = formatMessagesForAI(messages);
     
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/chat`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/openai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: formattedMessages, priorityMessage })
