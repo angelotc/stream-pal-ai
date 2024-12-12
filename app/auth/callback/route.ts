@@ -89,7 +89,8 @@ export async function GET(request: NextRequest) {
                     .single();
 
                   if (settingsCheckError && settingsCheckError.code === 'PGRST116') {
-                    // No existing settings found, proceed with upsert of default settings
+                    console.log('No existing Twitch stream settings found for user. Creating defaults...');
+                    
                     const { error: settingsError } = await supabase
                       .from('stream_settings')
                       .insert({
@@ -104,12 +105,22 @@ export async function GET(request: NextRequest) {
                       });
 
                     if (settingsError) {
-                      console.error('Error inserting stream settings:', settingsError);
+                      console.error('❌ Failed to create default stream settings:', {
+                        userId: data.user.id,
+                        platformUserId: twitchData.id,
+                        error: settingsError
+                      });
                     } else {
-                      console.log('Successfully inserted stream settings');
+                      console.log('✅ Successfully created default stream settings for user', {
+                        userId: data.user.id,
+                        platformUserId: twitchData.id
+                      });
                     }
                   } else if (!existingSettings) {
-                    console.error('Unexpected error checking stream settings:', settingsCheckError);
+                    console.warn('⚠️ Unexpected error checking stream settings:', {
+                      error: settingsCheckError,
+                      userId: data.user.id
+                    });
                   }
                 }
               }
