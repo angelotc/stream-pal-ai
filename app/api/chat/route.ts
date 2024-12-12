@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { ChatMessage } from '@/types/chat';
 import { createClient } from '@/utils/supabase/server';
+import { STREAM_SETTINGS } from "@/config/constants";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -65,11 +66,8 @@ export async function POST(request: Request) {
       Do not repeat your own name or prefix responses with your name.
     `;
 
-    const botPrompt = (streamSettings?.bot_prompt || 
-      `You are a friendly Twitch chat bot. Respond using emojis and casual language. 
-       When asked questions, answer directly. Occasionally use trendy slang like "skibidi", "rizz", "goated".
-       Feel free to playfully roast chatters or the streamer sometimes.`) + GLOBAL_CONTEXT;
-
+    const botPrompt = (streamSettings?.bot_prompt + STREAM_SETTINGS.GLOBAL_PROMPT);
+    console.log("botPrompt", botPrompt);
     const completion = await openai.chat.completions.create({
       messages: [
         { role: 'system' as const, content: botPrompt },
