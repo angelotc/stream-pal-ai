@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getToken } from '@/utils/twitch/auth';
 
 export async function POST(request: Request) {
   try {
     const { broadcasterId, message } = await request.json();
     
     // Get fresh token with bot permissions
-    const accessToken = await getToken({
-      twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
-      twitch_client: process.env.TWITCH_CLIENT_ID!
-    });
+    const tokenResponse = await fetch(`${process.env.SITE_URL}/api/twitch/token`);
+    const { accessToken } = await tokenResponse.json();
 
     const response = await fetch(`https://api.twitch.tv/helix/chat/messages`, {
       method: 'POST',

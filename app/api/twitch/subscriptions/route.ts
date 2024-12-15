@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 import { manageTwitchSubscriptions  } from '@/app/api/twitch/subscriptions/service';
-import { getStreamerData, getToken } from '@/utils/twitch/auth';
+import { getStreamerData } from '@/utils/twitch/auth';
 
 
 export async function POST(request: Request) {
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const tokenResponse = await fetch(`${process.env.SITE_URL}/api/twitch/token`);
     const { accessToken } = await tokenResponse.json();
 
-    console.log("accessToken", token);
+    console.log("accessToken", accessToken);
     console.log("user.user_metadata.full_name", user.user_metadata.full_name);
     console.log("process.env.TWITCH_CLIENT_ID!", process.env.TWITCH_CLIENT_ID!);
     const streamerData = await getStreamerData({ 

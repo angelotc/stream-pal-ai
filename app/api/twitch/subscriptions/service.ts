@@ -1,4 +1,4 @@
-import { TwitchSubscription } from '@/types/twitch';
+import { Twitch, TwitchSubscription } from '@/types/twitch';
 export async function subscribeToChatMessages(broadcasterId: string, user_id: string, accessToken: string) {
     console.log('Subscribing to chat messages for broadcaster:', broadcasterId);
     
@@ -177,4 +177,29 @@ export async function manageTwitchSubscriptions(userId: string, botEnabled: bool
         throw error;
     }
 } 
+
+export async function getStreamerData({ client_id, access_token, twitch_username }: Twitch) {
+  try {
+    const response = await fetch(
+      `https://api.twitch.tv/helix/users?login=${twitch_username}`,
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          'Client-Id': client_id,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (response.status === 401) {
+      console.debug('Refresh Token');
+      return;
+    }
+
+    const data = await response.json();
+    return data.data[0];
+  } catch (error) {
+    throw error;
+  }
+}
 
