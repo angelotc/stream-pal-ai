@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyWebhookSignature } from '@/utils/twitch/webhook-verification';
 import { handleStreamStart, handleStreamEnd } from '@/utils/twitch/event-handlers';
-import { processMessage } from '@/utils/messages/service';
+import { processMessage } from './service';
 
 export async function POST(request: Request) {
     console.log("Webhook endpoint hit!");

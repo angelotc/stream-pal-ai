@@ -1,24 +1,19 @@
-export async function sendTwitchMessage(broadcasterId: string, message: string) {
-    try {
-        const response = await fetch(process.env.NEXT_PUBLIC_SITE_URL + '/api/twitch/message', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                broadcasterId,
-                message
-            })
-        });
+import { CHAT } from "@/config/constants";
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error);
-        }
+export function formatMessagesForAI(messages: any[]) {
+    return messages.map(m => ({
+        text: m.text ?? '',
+        type: m.type,
+        chatter_user_name: m.chatter_user_name ?? 'anonymous',
+        twitch_user_id: m.users?.twitch_user_id ?? 'unknown',
+        created_at: m.created_at,
+        broadcaster_twitch_id: m.broadcaster_twitch_id
+    }));
+}
 
-        return await response.json();
-    } catch (error) {
-        console.error('Error sending Twitch message:', error);
-        throw error;
-    }
+export function shouldInteract(lastInteractionTime: string | null): boolean {
+    if (!lastInteractionTime) return true;
+    const now = Date.now();
+    const lastInteraction = new Date(lastInteractionTime).getTime();
+    return (now - lastInteraction) >= CHAT.INTERACTION_COOLDOWN;
 } 
