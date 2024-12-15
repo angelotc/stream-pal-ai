@@ -3,7 +3,7 @@ import { adminClient, updateStreamStatus  } from '@/utils/supabase/admin';
 import { MessageType, ChatMessage } from '@/types/chat';
 import { formatMessagesForAI } from '@/utils/twitch/chat';
 import { CHAT } from '@/config/constants';
-import { subscribeToChatMessages, unsubscribeFromChatMessages } from '@/utils/twitch/subscriptions';
+import { subscribeToChatMessages, unsubscribeFromChatMessages } from '@/app/api/twitch/subscriptions/service';
 import { getToken } from '@/utils/twitch/auth';
 
 // Core message processing logic

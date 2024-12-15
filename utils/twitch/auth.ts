@@ -51,6 +51,7 @@ export const getToken = async ({ twitch_secret, twitch_client }: TokenRefresh) =
 };
 
 export const validateToken = async ({ twitchToken }: TokenValidation) => {
+  // TODO: figure out how to use this
   try {
     const response = await fetch('https://id.twitch.tv/oauth2/validate', {
       headers: {

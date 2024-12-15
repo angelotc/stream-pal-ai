@@ -1,12 +1,4 @@
-interface TwitchSubscription {
-    id: string;
-    condition: {
-        broadcaster_user_id: string;
-    };
-    type: string;
-    status: string;
-}
-
+import { TwitchSubscription } from '@/types/twitch';
 export async function subscribeToChatMessages(broadcasterId: string, user_id: string, accessToken: string) {
     console.log('Subscribing to chat messages for broadcaster:', broadcasterId);
     

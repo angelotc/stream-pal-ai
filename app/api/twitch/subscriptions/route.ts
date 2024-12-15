@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 import { manageTwitchSubscriptions  } from '@/utils/twitch/server';
-import { getStreamerData, getToken, validateToken } from '@/utils/twitch/auth';
+import { getStreamerData, getToken } from '@/utils/twitch/auth';
 
 
 export async function POST(request: Request) {
