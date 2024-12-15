@@ -1,19 +1,38 @@
-import { getToken } from '../../../../utils/twitch/auth';
+import { TWITCH_SCOPES } from '@/utils/twitch/auth';
 import { NextResponse } from 'next/server';
+
+let cachedToken: { value: string; expiresAt: number } | null = null;
 
 export async function GET() {
   try {
-    const token = await getToken({
-      twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
-      twitch_client: process.env.TWITCH_CLIENT_ID!
+    if (cachedToken && cachedToken.expiresAt > Date.now()) {
+      return NextResponse.json({ token: cachedToken.value });
+    }
+
+    const response = await fetch('https://id.twitch.tv/oauth2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: process.env.TWITCH_CLIENT_ID!,
+        client_secret: process.env.TWITCH_CLIENT_SECRET!,
+        grant_type: 'client_credentials',
+        scope: TWITCH_SCOPES
+      })
     });
+
+    const data = await response.json();
     
-    return NextResponse.json({ token });
+    if (!response.ok) {
+      throw new Error(`Failed to get token: ${data.message}`);
+    }
+
+    cachedToken = {
+      value: data.access_token,
+      expiresAt: Date.now() + (data.expires_in - 60) * 1000
+    };
+
+    return NextResponse.json({ token: cachedToken.value });
   } catch (error) {
-    console.error('Error getting token:', error);
-    return NextResponse.json(
-      { error: 'Failed to get token' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to get token' }, { status: 500 });
   }
 } 

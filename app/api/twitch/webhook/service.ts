@@ -4,7 +4,6 @@ import { MessageType, ChatMessage } from '@/types/chat';
 import { formatMessagesForAI } from '@/utils/twitch/chat';
 import { CHAT } from '@/config/constants';
 import { subscribeToChatMessages, unsubscribeFromChatMessages } from '@/app/api/twitch/subscriptions/service';
-import { getToken } from '@/utils/twitch/auth';
 
 // Core message processing logic
 export async function processMessage({
@@ -178,11 +177,9 @@ export async function handleStreamStart(event: any) {
         true
     );
     
-    const accessToken = await getToken({
-        twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
-        twitch_client: process.env.TWITCH_CLIENT_ID!
-    });
-    
+    const tokenResponse = await fetch(`${process.env.SITE_URL}/api/twitch/token`);
+    const { accessToken } = await tokenResponse.json();
+
     await subscribeToChatMessages(
         event.broadcaster_user_id, 
         process.env.TWITCH_BOT_USER_ID!, 
@@ -196,10 +193,8 @@ export async function handleStreamEnd(event: any) {
         false
     );
     
-    const accessToken = await getToken({
-        twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
-        twitch_client: process.env.TWITCH_CLIENT_ID!
-    });
-    
+    const tokenResponse = await fetch(`${process.env.SITE_URL}/api/twitch/token`);
+    const { accessToken } = await tokenResponse.json();
+
     await unsubscribeFromChatMessages(event.broadcaster_user_id, accessToken);
 } 

@@ -15,12 +15,10 @@ export async function POST(request: Request) {
 
     const { botEnabled } = await request.json();
     
-    // Get fresh token
-    const accessToken = await getToken({
-        twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
-        twitch_client: process.env.TWITCH_CLIENT_ID!
-    });
-    console.log("accessToken", accessToken);
+    const tokenResponse = await fetch(`${process.env.SITE_URL}/api/twitch/token`);
+    const { accessToken } = await tokenResponse.json();
+
+    console.log("accessToken", token);
     console.log("user.user_metadata.full_name", user.user_metadata.full_name);
     console.log("process.env.TWITCH_CLIENT_ID!", process.env.TWITCH_CLIENT_ID!);
     const streamerData = await getStreamerData({ 
