@@ -15,6 +15,10 @@ export const DEEPGRAM = {
   }
 } as const;
 
+export const TWITCH = {
+  SCOPES: 'channel:read:subscriptions channel:manage:broadcast chat:read chat:edit user:write:chat user:read:chat'
+} as const;
+
 export const CHAT = {
   INTERACTION_COOLDOWN: 10 * 1000, // 10 seconds
   MESSAGE_CONTEXT_SIZE: 10,

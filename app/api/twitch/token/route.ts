@@ -1,4 +1,4 @@
-import { TWITCH_SCOPES } from '@/utils/twitch/auth';
+import { TWITCH } from '@/config/constants';
 import { NextResponse } from 'next/server';
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
@@ -16,7 +16,7 @@ export async function GET() {
         client_id: process.env.TWITCH_CLIENT_ID!,
         client_secret: process.env.TWITCH_CLIENT_SECRET!,
         grant_type: 'client_credentials',
-        scope: TWITCH_SCOPES
+        scope: TWITCH.SCOPES
       })
     });
 
