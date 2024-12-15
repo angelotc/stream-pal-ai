@@ -1,8 +1,10 @@
 import { createClient } from '@/utils/supabase/client';
-import { adminClient  } from '@/utils/supabase/admin';
+import { adminClient, updateStreamStatus  } from '@/utils/supabase/admin';
 import { MessageType, ChatMessage } from '@/types/chat';
 import { formatMessagesForAI } from '@/utils/twitch/chat';
 import { CHAT } from '@/config/constants';
+import { subscribeToChatMessages, unsubscribeFromChatMessages } from '@/utils/twitch/subscriptions';
+import { getToken } from '@/utils/twitch/auth';
 
 // Core message processing logic
 export async function processMessage({
@@ -167,4 +169,37 @@ export async function sendTwitchMessage(broadcasterId: string, message: string) 
         console.error('Error sending Twitch message:', error);
         throw error;
     }
+} 
+
+
+export async function handleStreamStart(event: any) {
+    const userData = await updateStreamStatus(
+        event.broadcaster_user_id,
+        true
+    );
+    
+    const accessToken = await getToken({
+        twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
+        twitch_client: process.env.TWITCH_CLIENT_ID!
+    });
+    
+    await subscribeToChatMessages(
+        event.broadcaster_user_id, 
+        process.env.TWITCH_BOT_USER_ID!, 
+        accessToken
+    );
+}
+
+export async function handleStreamEnd(event: any) {
+    const userData = await updateStreamStatus(
+        event.broadcaster_user_id,
+        false
+    );
+    
+    const accessToken = await getToken({
+        twitch_secret: process.env.TWITCH_CLIENT_SECRET!,
+        twitch_client: process.env.TWITCH_CLIENT_ID!
+    });
+    
+    await unsubscribeFromChatMessages(event.broadcaster_user_id, accessToken);
 } 
