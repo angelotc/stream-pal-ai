@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
-import { getToken } from './auth';
-import { subscribeToChatMessages, unsubscribeFromChatMessages } from './subscriptions';
-import { updateStreamStatus } from '../supabase/admin';
+import { getToken } from '@/utils/twitch/auth';
+import { subscribeToChatMessages, unsubscribeFromChatMessages } from '@/utils/twitch/subscriptions';
+import { updateStreamStatus } from '@/utils/supabase/admin';
 
 export async function handleStreamStart(event: any) {
     const userData = await updateStreamStatus(
