@@ -5,7 +5,7 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { useDeepgram, LiveConnectionState, LiveTranscriptionEvents, LiveTranscriptionEvent } from '@/context/DeepgramContextProvider';
 import { useMicrophone, MicrophoneEvents, MicrophoneState } from '@/context/MicrophoneContextProvider';
-import { processMessage } from '@/utils/messages/service';
+import { processMessage } from '@/app/api/twitch/webhook/service';
 import { DEEPGRAM, TRANSCRIPTION } from '@/config/constants';
 import { Message } from '@/components/ui/Messages/MessageComponents';
 import { useMessageLoader } from '@/hooks/useMessageLoader';
