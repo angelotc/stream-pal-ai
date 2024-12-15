@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
-import { manageTwitchSubscriptions  } from '@/utils/twitch/server';
+import { manageTwitchSubscriptions  } from '@/app/api/twitch/subscriptions/service';
 import { getStreamerData, getToken } from '@/utils/twitch/auth';
 
 
