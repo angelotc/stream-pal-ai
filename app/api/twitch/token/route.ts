@@ -21,7 +21,7 @@ export async function GET() {
     });
 
     const data = await response.json();
-    
+    console.log('Token response:', data);
     if (!response.ok) {
       throw new Error(`Failed to get token: ${data.message}`);
     }

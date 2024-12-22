@@ -179,7 +179,7 @@ export async function handleStreamStart(event: any) {
     
     const tokenResponse = await fetch(`${process.env.SITE_URL}/api/twitch/token`);
     const { accessToken } = await tokenResponse.json();
-
+    
     await subscribeToChatMessages(
         event.broadcaster_user_id, 
         process.env.TWITCH_BOT_USER_ID!, 
