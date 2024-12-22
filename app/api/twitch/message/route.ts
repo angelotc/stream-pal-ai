@@ -7,7 +7,6 @@ export async function POST(request: Request) {
     // Get fresh token with bot permissions
     const tokenResponse = await fetch(`${process.env.SITE_URL}/api/twitch/token`);
     const { accessToken } = await tokenResponse.json();
-    console.log('Access token:', accessToken);
     const response = await fetch(`https://api.twitch.tv/helix/chat/messages`, {
       method: 'POST',
       headers: {
