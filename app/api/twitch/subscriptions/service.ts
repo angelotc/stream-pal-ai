@@ -15,7 +15,7 @@ export async function subscribeToChatMessages(broadcasterId: string, user_id: st
             secret: process.env.TWITCH_WEBHOOK_SECRET
         }
     };
-        
+    
     console.log('Subscription request data:', JSON.stringify(subscriptionData, null, 2));
     
     try {

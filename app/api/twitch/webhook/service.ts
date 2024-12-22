@@ -165,7 +165,7 @@ export async function sendTwitchMessage(broadcasterId: string, message: string) 
 
         return await response.json();
     } catch (error) {
-        console.error('Error sending Twitch message:', error);
+        console.error('Error sending Twitch message via webhook:', error);
         throw error;
     }
 } 
