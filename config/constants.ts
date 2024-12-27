@@ -39,3 +39,18 @@ export const OPENAI = {
   MAX_TOKENS: 100,
   TEMPERATURE: 0.7
 } as const;
+
+export const RATE_LIMIT = {
+  WINDOW_MS: 60 * 1000, // 1 minute
+  MAX_REQUESTS: 30 // 30 requests per minute
+} as const;
+
+export const TOKEN = {
+  BUFFER_TIME_SECONDS: 60, // 1 minute buffer
+  ERRORS: {
+    MISSING_CREDENTIALS: 'Missing Twitch credentials',
+    UNAUTHORIZED: 'Unauthorized',
+    RATE_LIMIT_EXCEEDED: 'Rate limit exceeded',
+    FETCH_FAILED: 'Failed to get token'
+  }
+} as const;

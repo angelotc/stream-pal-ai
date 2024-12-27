@@ -1,6 +1,7 @@
 {
   "private": true,
   "scripts": {
+    "test": "vitest",
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
@@ -60,6 +61,7 @@
     "supabase": "^1.172.2",
     "ts-node": "^10.9.2",
     "ttypescript": "^1.5.15",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^2.1.8"
   }
 }
