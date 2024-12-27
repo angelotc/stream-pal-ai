@@ -4,6 +4,26 @@ import { createClient } from '@/utils/supabase/server';
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
+async function validateTwitchToken(token: string): Promise<boolean> {
+  try {
+    const response = await fetch('https://id.twitch.tv/oauth2/validate', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      console.log('Token validation failed:', await response.json());
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Token validation error:', error);
+    return false;
+  }
+}
+
 export async function GET(request: Request) {
   // 1. Check required environment variables
   if (!process.env.TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) {
@@ -24,7 +44,7 @@ export async function GET(request: Request) {
     );
   }
 
-  // 3. Rate limiting (simple in-memory implementation)
+  // 3. Rate limiting
   const clientIp = request.headers.get('x-forwarded-for') || 'unknown';
   const now = Date.now();
   const rateLimit = getRateLimit(clientIp, now);
@@ -42,10 +62,17 @@ export async function GET(request: Request) {
   }
 
   try {
+    // 4. Check cached token and validate it
     if (cachedToken && cachedToken.expiresAt > Date.now()) {
-      return NextResponse.json({ accessToken: cachedToken.value });
+      const isValid = await validateTwitchToken(cachedToken.value);
+      if (isValid) {
+        return NextResponse.json({ accessToken: cachedToken.value });
+      }
+      // If token is invalid, clear it and get a new one
+      cachedToken = null;
     }
 
+    // 5. Get new token
     const response = await fetch('https://id.twitch.tv/oauth2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -58,9 +85,14 @@ export async function GET(request: Request) {
     });
 
     const data = await response.json();
-    console.log('Token response:', data);
     if (!response.ok) {
       throw new Error(`Failed to get token: ${data.message}`);
+    }
+
+    // 6. Validate new token before caching
+    const isValid = await validateTwitchToken(data.access_token);
+    if (!isValid) {
+      throw new Error('New token validation failed');
     }
 
     const expiresInMs = (data.expires_in - TOKEN.BUFFER_TIME_SECONDS) * 1000;
@@ -80,14 +112,13 @@ export async function GET(request: Request) {
   }
 }
 
-// Simple in-memory rate limiting
+// Rate limiting implementation remains unchanged
 const rateLimits = new Map<string, { count: number; timestamp: number }>();
 
 function getRateLimit(clientIp: string, now: number) {
   const current = rateLimits.get(clientIp) || { count: 0, timestamp: now };
   
   if (now - current.timestamp > RATE_LIMIT.WINDOW_MS) {
-    // Reset if window has passed
     current.count = 1;
     current.timestamp = now;
   } else {
