@@ -1,6 +1,5 @@
 import { TWITCH, RATE_LIMIT, TOKEN } from '@/config/constants';
 import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
@@ -33,18 +32,7 @@ export async function GET(request: Request) {
     );
   }
 
-  // 2. Validate authentication
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    return NextResponse.json(
-      { error: TOKEN.ERRORS.UNAUTHORIZED },
-      { status: 401 }
-    );
-  }
-
-  // 3. Rate limiting
+  // 2. Rate limiting
   const clientIp = request.headers.get('x-forwarded-for') || 'unknown';
   const now = Date.now();
   const rateLimit = getRateLimit(clientIp, now);
@@ -62,17 +50,16 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 4. Check cached token and validate it
+    // 3. Check cached token and validate it
     if (cachedToken && cachedToken.expiresAt > Date.now()) {
       const isValid = await validateTwitchToken(cachedToken.value);
       if (isValid) {
         return NextResponse.json({ accessToken: cachedToken.value });
       }
-      // If token is invalid, clear it and get a new one
       cachedToken = null;
     }
 
-    // 5. Get new token
+    // 4. Get new token
     const response = await fetch('https://id.twitch.tv/oauth2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -89,7 +76,7 @@ export async function GET(request: Request) {
       throw new Error(`Failed to get token: ${data.message}`);
     }
 
-    // 6. Validate new token before caching
+    // 5. Validate new token before caching
     const isValid = await validateTwitchToken(data.access_token);
     if (!isValid) {
       throw new Error('New token validation failed');
@@ -112,7 +99,7 @@ export async function GET(request: Request) {
   }
 }
 
-// Rate limiting implementation remains unchanged
+// Rate limiting implementation
 const rateLimits = new Map<string, { count: number; timestamp: number }>();
 
 function getRateLimit(clientIp: string, now: number) {
