@@ -43,6 +43,19 @@ export async function GET(request: NextRequest) {
 
       if (accessToken) {
         try {
+          // Verify scopes
+          const validateResponse = await fetch('https://id.twitch.tv/oauth2/validate', {
+            headers: {
+              'Authorization': `OAuth ${accessToken}`
+            }
+          });
+
+          if (!validateResponse.ok) {
+            throw new Error('Failed to validate token');
+          }
+
+          const validateData = await validateResponse.json();
+          console.log('Validate data:', validateData);
           console.log('Fetching Twitch user data...');
           const twitchData = await getStreamerData({
             client_id: process.env.TWITCH_CLIENT_ID!,
