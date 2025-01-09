@@ -13,7 +13,7 @@ export function calculateMessageDelay(
     typeSpeed: 7,             // 7 characters per second (average human typing)
     randomVariation: 0.2,     // 20% random variation
     minDelay: 300,           // Minimum 300ms delay
-    maxDelay: 5000           // Maximum 5 second delay
+    maxDelay: 3000           // Maximum 5 second delay
   }
 ): number {
   // Calculate base typing time based on message length
