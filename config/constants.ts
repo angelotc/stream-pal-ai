@@ -36,7 +36,7 @@ export const STREAM_SETTINGS = {
 } as const;
 
 export const OPENAI = {
-  MODEL: "meta-llama/llama-3.2-3b-instruct:free",
+  MODEL: "google/gemini-flash-1.5-8b-exp",
   MAX_TOKENS: 100,
   TEMPERATURE: 0.7
 } as const;
