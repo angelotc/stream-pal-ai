@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
+import { calculateMessageDelay } from '@/utils/message-timing';
 
 export async function POST(request: Request) {
   try {
     const { broadcasterId, message } = await request.json();
+    
+    // Calculate delay based on message length
+    const delay = calculateMessageDelay(message);
+    
+    // Wait for the calculated delay
+    await new Promise(resolve => setTimeout(resolve, delay));
     
     // Get fresh token with bot permissions
     const tokenResponse = await fetch(`${process.env.SITE_URL}/api/twitch/token`);
