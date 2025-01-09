@@ -5,6 +5,7 @@ import { type Provider } from '@supabase/supabase-js';
 import { getURL } from '@/utils/helpers';
 import { redirectToPath } from './server';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+import { TWITCH } from '@/config/constants';
 
 export async function handleRequest(
   e: React.FormEvent<HTMLFormElement>,
@@ -45,7 +46,7 @@ export async function signInWithOAuth(e: React.FormEvent<HTMLFormElement>) {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: provider,
       options: {
-        scopes: 'channel:read:subscriptions channel:manage:broadcast chat:read chat:edit user:read:email',
+        scopes: TWITCH.SCOPES,
         redirectTo: redirectURL,
         queryParams: {
           // Request additional Twitch user data
