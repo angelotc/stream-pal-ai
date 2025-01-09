@@ -16,7 +16,7 @@ export const DEEPGRAM = {
 } as const;
 
 export const TWITCH = {
-  SCOPES: 'channel:read:subscriptions channel:manage:broadcast chat:read chat:edit user:write:chat user:read:chat'
+  SCOPES: 'channel:read:subscriptions channel:manage:broadcast chat:read chat:edit user:write:chat user:read:chat channel:bot'
 } as const;
 
 export const CHAT = {
