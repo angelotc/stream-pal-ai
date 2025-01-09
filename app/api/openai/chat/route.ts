@@ -5,7 +5,8 @@ import { createClient } from '@/utils/supabase/server';
 import { STREAM_SETTINGS, OPENAI, CHAT } from "@/config/constants";
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENROUTER_API_KEY,
+  baseURL: "https://openrouter.ai/api/v1"
 });
 
 export async function POST(request: Request) {
