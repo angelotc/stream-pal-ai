@@ -40,22 +40,15 @@ export const getProducts = async (supabase: SupabaseClient) => {
 };
 
 export const getUserDetails = async (supabase: SupabaseClient) => {
-  // Reduced cache time and added user-specific key
-  return unstable_cache(
-    async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-      
-      const { data: userDetails } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      return userDetails;
-    },
-    ['user-details'],
-    { revalidate: 10, tags: ['user-details'] } // Reduced to 10 seconds
-  )();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  
+  const { data: userDetails } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+  return userDetails;
 };
 
 export const getBotPrompt = async (supabase: SupabaseClient) => {
