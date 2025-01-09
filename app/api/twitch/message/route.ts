@@ -4,10 +4,10 @@ import { calculateMessageDelay } from '@/utils/message-timing';
 export async function POST(request: Request) {
   try {
     const { broadcasterId, message } = await request.json();
-    
+    console.log('sending message...', message);
     // Calculate delay based on message length
     const delay = calculateMessageDelay(message);
-    
+    console.log('delay:', delay);
     // Wait for the calculated delay
     await new Promise(resolve => setTimeout(resolve, delay));
     
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
         sender_id: process.env.TWITCH_BOT_USER_ID!
       })
     });
-
+    console.log('response:', response);
     if (!response.ok) {
       const error = await response.json();
       throw new Error(`Failed to send message: ${error.message}`);
