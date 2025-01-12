@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     console.log('process.env.SITE_URL', process.env.SITE_URL);
     const { botEnabled } = await request.json();
     console.log("botEnabled", botEnabled);
-    const tokenResponse = await fetch(`/api/twitch/token`);
+    const tokenResponse = await fetch(`${process.env.SITE_URL}/api/twitch/token`);
     const { accessToken } = await tokenResponse.json();
 
     console.log("accessToken", accessToken);
