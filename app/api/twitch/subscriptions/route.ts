@@ -22,15 +22,14 @@ export async function POST(request: Request) {
 
     console.log("accessToken", accessToken);
     console.log("user.user_metadata.full_name", user.user_metadata.full_name);
-    console.log("process.env.TWITCH_CLIENT_ID!", process.env.TWITCH_CLIENT_ID!);
-    const streamerData = await getStreamerData({ 
-        client_id: process.env.TWITCH_CLIENT_ID!,
-        access_token: accessToken,
-        twitch_username: user.user_metadata.full_name 
-    });
-    console.log("streamerData", streamerData);
+    // const streamerData = await getStreamerData({ 
+    //     client_id: process.env.TWITCH_CLIENT_ID!,
+    //     access_token: accessToken,
+    //     twitch_username: user.user_metadata.full_name 
+    // });
+    // console.log("streamerData", streamerData);
          
-    await manageTwitchSubscriptions(streamerData.id, botEnabled, accessToken);
+    await manageTwitchSubscriptions(user.user_metadata.twitch_user_id, botEnabled, accessToken);
     
     return new NextResponse(null, { status: 200 });
   } catch (error) {
