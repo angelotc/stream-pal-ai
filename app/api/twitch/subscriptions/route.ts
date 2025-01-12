@@ -1,7 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 import { manageTwitchSubscriptions  } from '@/app/api/twitch/subscriptions/service';
-import { getStreamerData } from '@/app/api/twitch/subscriptions/service';
 
 
 export async function POST(request: Request) {
@@ -12,23 +11,10 @@ export async function POST(request: Request) {
     if (!user) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
-    console.log("user", user);
-    console.log("request", request);
-    console.log('process.env.SITE_URL', process.env.SITE_URL);
     const { botEnabled } = await request.json();
-    console.log("botEnabled", botEnabled);
     const tokenResponse = await fetch(`${process.env.SITE_URL}/api/twitch/token`);
     const { accessToken } = await tokenResponse.json();
 
-    console.log("accessToken", accessToken);
-    console.log("user.user_metadata.full_name", user.user_metadata.full_name);
-    // const streamerData = await getStreamerData({ 
-    //     client_id: process.env.TWITCH_CLIENT_ID!,
-    //     access_token: accessToken,
-    //     twitch_username: user.user_metadata.full_name 
-    // });
-    // console.log("streamerData", streamerData);
-         
     await manageTwitchSubscriptions(user.user_metadata.twitch_user_id, botEnabled, accessToken);
     
     return new NextResponse(null, { status: 200 });
