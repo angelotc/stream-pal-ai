@@ -103,12 +103,38 @@ export async function manageTwitchSubscriptions(userId: string, botEnabled: bool
     };
   
     try {
+        // First check existing subscriptions
+        const existingResponse = await fetch(`${TWITCH_API}?user_id=${userId}`, {
+            headers
+        });
+        const existingData = await existingResponse.json();
+
         if (botEnabled) {
-            // Subscribe to stream.online
-            const onlineResponse = await fetch(TWITCH_API, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({
+            // Check if we already have active subscriptions
+            const hasOnlineSub = existingData.data?.some(
+                (sub: any) => sub.type === 'stream.online' && 
+                             sub.condition.broadcaster_user_id === userId &&
+                             sub.status === 'enabled'
+            );
+            const hasOfflineSub = existingData.data?.some(
+                (sub: any) => sub.type === 'stream.offline' && 
+                             sub.condition.broadcaster_user_id === userId &&
+                             sub.status === 'enabled'
+            );
+
+            // If both subs exist and are enabled, we're done
+            if (hasOnlineSub && hasOfflineSub) {
+                return {
+                    success: true,
+                    status: 'active',
+                    message: 'Subscriptions already active'
+                };
+            }
+
+            // Create missing subscriptions
+            const subscriptionsToCreate = [];
+            if (!hasOnlineSub) {
+                subscriptionsToCreate.push({
                     type: 'stream.online',
                     version: '1',
                     condition: { broadcaster_user_id: userId },
@@ -117,19 +143,10 @@ export async function manageTwitchSubscriptions(userId: string, botEnabled: bool
                         callback: CALLBACK_URL,
                         secret: process.env.TWITCH_WEBHOOK_SECRET
                     }
-                })
-            });
-            const onlineData = await onlineResponse.json();
-            console.log("Online subscription response data:", onlineData);
-            if (!onlineResponse.ok) {
-                throw new Error(`Failed to subscribe to stream.online: ${onlineResponse.statusText}`);
+                });
             }
-
-            // Subscribe to stream.offline
-            const offlineResponse = await fetch(TWITCH_API, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({
+            if (!hasOfflineSub) {
+                subscriptionsToCreate.push({
                     type: 'stream.offline',
                     version: '1',
                     condition: { broadcaster_user_id: userId },
@@ -138,43 +155,66 @@ export async function manageTwitchSubscriptions(userId: string, botEnabled: bool
                         callback: CALLBACK_URL,
                         secret: process.env.TWITCH_WEBHOOK_SECRET
                     }
-                })
-            });
-            const offlineData = await offlineResponse.json();
-            console.log("Offline subscription response data:", offlineData);
-            if (!offlineResponse.ok) {
-                throw new Error(`Failed to subscribe to stream.offline: ${offlineResponse.statusText}`);
+                });
             }
+
+            // Create any missing subscriptions
+            for (const subData of subscriptionsToCreate) {
+                try {
+                    const response = await fetch(TWITCH_API, {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify(subData)
+                    });
+                    const data = await response.json();
+
+                    // 409 means it exists, which is fine
+                    if (!response.ok && response.status !== 409) {
+                        throw new Error(`Failed to create ${subData.type} subscription: ${JSON.stringify(data)}`);
+                    }
+                } catch (error: any) {
+                    if (error?.status !== 409) {
+                        throw error;
+                    }
+                }
+            }
+
+            return {
+                success: true,
+                status: 'created',
+                message: 'Subscriptions created successfully'
+            };
+
         } else {
-            // Get existing subscriptions
-            const response = await fetch(`${TWITCH_API}?user_id=${userId}`, {
-                headers
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to fetch subscriptions: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            console.log("deleting subscriptions", data);
-            
-            // Delete each subscription
-            if (data.data) {
-                for (const sub of data.data) {
+            // Delete existing subscriptions
+            const deletePromises = existingData.data
+                .filter((sub: any) => 
+                    sub.condition.broadcaster_user_id === userId &&
+                    (sub.type === 'stream.online' || sub.type === 'stream.offline')
+                )
+                .map(async (sub: any) => {
                     const deleteResponse = await fetch(`${TWITCH_API}?id=${sub.id}`, {
                         method: 'DELETE',
                         headers
                     });
+                    return deleteResponse;
+                });
 
-                    if (!deleteResponse.ok) {
-                        throw new Error(`Failed to delete subscription: ${deleteResponse.statusText}`);
-                    }
-                }
-            }
+            await Promise.all(deletePromises);
+
+            return {
+                success: true,
+                status: 'disabled',
+                message: 'Subscriptions removed successfully'
+            };
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Twitch API error:', error);
-        throw error;
+        return {
+            success: false,
+            status: error.status || 500,
+            message: error.message || 'Failed to manage subscriptions'
+        };
     }
 } 
 
